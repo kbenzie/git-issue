@@ -1,0 +1,10 @@
+# bytecode
+*.pyc
+
+# virtualenv
+.venv
+.py2
+.py3
+
+# egg-info
+*.egg-info
