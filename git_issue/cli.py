@@ -254,7 +254,7 @@ def comment(service, **kwargs):
     if kwargs['message']:
         body = kwargs.pop('message')
     else:
-        body = _editor_()
+        body = '\n'.join(_editor_())
     issue.comment(body)
 
 

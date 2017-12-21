@@ -153,6 +153,8 @@ Please report any issues on [GitHub][issues].
 
 ## HISTORY
 
+0.1.1 - Fix bug in git issue comment.
+
 0.1.0 - Support `Gogs` service.
 
 ## AUTHOR
