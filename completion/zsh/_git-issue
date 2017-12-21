@@ -1,0 +1,100 @@
+#compdef git-issue
+#description Manage a remote git issue tracker.
+
+_git-issue() {
+  local context curcontent=$curcontent state line ret=1
+  typeset -A opt_args
+
+  _arguments -C \
+    '(-h --help)'{-h,--help}'[show this help message and exit]' \
+    '1: :->command' \
+    '*:: :->option-or-argument'
+
+  case $state in
+
+    (command)
+      declare -a commands
+      commands=(
+        create:'create a new issue'
+        edit:'edit an existing issue'
+        close:'close an existing open issue'
+        reopen:'reopen an existing closed issue'
+        comment:'comment on an issue'
+        browse:'show issue in default browser'
+        show:'show detail of a single issue'
+        list:'list all existing issues'
+      )
+      _describe -t commands command commands && ret=0
+      ;;
+
+    (option-or-argument)
+      case $line[1] in
+
+        (create)
+          _arguments -S \
+            '(-m --message)'{-m,--message}'[message of the issue]: : ' \
+            '(-a --assignee)'{-a,--assignee}'[username to assign the issue]: : ' \
+            '*-l[label to apply to the issue]: :("${(@f)$(git-issue complete labels)}")' \
+            '*--label[label to apply to the issue]: :("${(@f)$(git-issue complete labels)}")' \
+            '(-s --milestone)'{-s,--milestone}'[milestone to assign the issue]: :("${(@f)$(git-issue complete milestones)}")' \
+            && ret=0
+          ;;
+
+        (edit)
+          _arguments -S \
+            '(-m --message)'{-m,--message}'[message of the issue]: : ' \
+            '(-n --no-message)'{-n,--no-message}'[no interactive message]: : ' \
+            '(-a --assignee)'{-a,--assignee}'[username to assign the issue]: : ' \
+            '*-l[label to apply to the issue]: :("${(@f)$(git-issue complete labels)}")' \
+            '*--label[label to apply to the issue]: :("${(@f)$(git-issue complete labels)}")' \
+            '(-s --milestone)'{-s,--milestone}'[milestone to assign the issue]: :("${(@f)$(git-issue complete milestones)}")' \
+            '1: :(( "${(@f)$(git-issue complete issues --state all)}" ))' \
+            && ret=0
+          ;;
+
+        (close)
+          _arguments -S \
+            '(-m --message)'{-m,--message}'[closing message]: : '\
+            '(-n --no-message)'{-n,--no-message}'[no closing message]'\
+            '1: :(( "${(@f)$(git-issue complete issues --state open)}" ))' \
+            && ret=0
+          ;;
+
+        (reopen)
+          _arguments -S \
+            '1: :(( "${(@f)$(git-issue complete issues --state closed)}" ))' \
+            && ret=0
+          ;;
+
+        (comment)
+          _arguments -S \
+            '1: :(( "${(@f)$(git-issue complete issues --state all)}" ))' \
+            && ret=0
+          ;;
+
+        (show)
+          _arguments -S \
+            '1: :(( "${(@f)$(git-issue complete issues --state all)}" ))' \
+            && ret=0
+          ;;
+
+        (list)
+          _arguments -S \
+            '1: :(open closed all)' \
+            && ret=0
+          ;;
+
+        (browse)
+          _arguments -S \
+            '(-u --url)'{-u,--url}"[print the url, don't open it]" \
+            '1: :(( "${(@f)$(git-issue complete issues --state all)}" ))' \
+            && ret=0
+          ;;
+
+      esac
+      ;;
+
+  esac
+
+  return ret
+}

@@ -1,0 +1,199 @@
+.\" generated with Ronn/v0.7.3
+.\" http://github.com/rtomayko/ronn/tree/0.7.3
+.
+.TH "GIT\-ISSUE" "1" "December 2017" "Kenneth Benzie" "git-issue manual"
+.
+.SH "NAME"
+\fBgit\-issue\fR \- Manage remote Git issue trackers
+.
+.SH "SYNOPSIS"
+\fBgit issue\fR [\fB\-h\fR]
+.
+.br
+\fBgit issue create\fR [\fB\-m\fR] [\fB\-a\fR] [\fB\-s\fR] [\fB\-l\fR]
+.
+.br
+\fBgit issue edit\fR [\fB\-m\fR] [\fB\-n\fR] [\fB\-a\fR] [\fB\-s\fR] [\fB\-l\fR] \fInumber\fR
+.
+.br
+\fBgit issue close\fR [\fB\-m\fR] [\fB\-n\fR] \fInumber\fR
+.
+.br
+\fBgit issue reopen\fR \fInumber\fR
+.
+.br
+\fBgit issue comment\fR [\fB\-m\fR] \fInumber\fR
+.
+.br
+\fBgit issue browse\fR [\fB\-u\fR] \fInumber\fR
+.
+.br
+\fBgit issue list\fR [{\fIopen\fR,\fIclosed\fR,\fIall\fR}]
+.
+.br
+\fBgit issue show\fR \fInumber\fR
+.
+.SH "DESCRIPTION"
+\fBgit\-issue\fR provides a command line interface to remote issue trackers allowing users to manage issues in the same way they manage git(1) repositories\. A remote issue tracker is referred to as \fIservice\fR\. Multiple \fIservice\fR providers can be supported by \fBgit\-issue\fR, see \fIHISTORY\fR for the supported \fIservice\fR list\. \fBgit\-issue\fR determines which \fIservice\fR to use by querying \fBissue\.service\fR\. Authentication with the \fIservice\fR is usually performed using an API token, \fBgit\-issue\fR queries \fBissue\.<service>\.token\fR to gain access to the \fIservice\fR\.
+.
+.SH "COMMANDS"
+.
+.TP
+\fBgit issue create\fR
+Create a new issue, when \fB\-m\fR is not specified an editor will be opened for the user to describe the issue\.
+.
+.TP
+\fBgit issue edit\fR
+Edit an existing issue, when \fB\-m\fR is not specified an editor will be opened for the user to edit the existing issue description\.
+.
+.TP
+\fBgit issue close\fR
+Close an existing open issue, when \fB\-n\fR is not specified an editor will be opened for the user to comment on whey the issue is being closed\.
+.
+.TP
+\fBgit issue reopen\fR
+Reopen an existing closed issued\.
+.
+.TP
+\fBgit issue comment\fR
+Comment on an existing issue\.
+.
+.TP
+\fBgit issue browse\fR
+Open an existing issues URL in a new tab in default browser\.
+.
+.TP
+\fBgit issue list\fR
+List all \fIopen\fR, \fIclosed\fR, or \fIall\fR existing issues, output is paged using less(1)\.
+.
+.TP
+\fBgit issue show\fR
+Show an existing issue, including comments and state changes, output is paged using less(1)\.
+.
+.SH "OPTIONS"
+.
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Show this manual and exit\.
+.
+.TP
+\fB\-m\fR \fImessage\fR, \fB\-\-message\fR \fImessage\fR
+Use the given \fImessage\fR as the issue title, editor will not be opened to edit a message, is mutually exclusive with \fB\-n\fR\.
+.
+.TP
+\fB\-n\fR, \fB\-\-no\-message\fR
+Do not open the editor to edit a message, is mutually exclusive with \fB\-m\fR\.
+.
+.TP
+\fB\-a\fR \fIassignee\fR, \fB\-\-assignee\fR \fIassignee\fR
+Search term for a user to assign the issue to\.
+.
+.TP
+\fB\-s\fR \fImilestone\fR, \fB\-\-milestone\fR \fImilestone\fR
+Name of the \fImilestone\fR to assign to the issue\.
+.
+.TP
+\fB\-l\fR \fIlabel\fR, \fB\-\-label\fR \fIlabel\fR
+Name of a \fIlabel\fR to assign to the issue, can be repeated to assign multiple \fIlabel\fR\'s to the issue\.
+.
+.TP
+\fInumber\fR
+The issue number to manage, the actual representation may change dependant on configured service\.
+.
+.TP
+\fIopen\fR, \fIclosed\fR, \fIall\fR
+The current state of issues to list, if the default is \fIopen\fR\.
+.
+.SH "SYNTAX"
+The syntax of editor message is dependant on the service providing the issue tracker, by default this will be Markdown \fIhttps://daringfireball\.net/projects/markdown/syntax\fR or some variation of it i\.e\. GitHub Flavoured Markdown \fIhttps://github\.github\.com/gfm/\fR\. \fBgit\-issue\fR generally does not process the text input by the user, with one exception; when editing a message in the editor the second line in the file will be ignored as a separator between the \fItitle\fR and \fIbody\fR of the issue\.
+.
+.SH "ENVIRONMENT"
+\fBgit\-issue\fR takes advantage of git\-config(1) to store information which it requires to function\.
+.
+.TP
+\fIgit config\fR \fBissue\.service\fR \fIservice\fR
+Name of the service which provides the remote issue tracker, e\.g\. \fBGogs\fR\.
+.
+.TP
+\fIgit config\fR \fBissue\.<service>\.url\fR \fIurl\fR
+HTTP URL of the service providing the remote issue tracker, \fBgit\-issue\fR will attempt to deduce this value if it is not set by inspecting the repositories remote URL and is thus not usually required to be manually configured\. \fB<service>\fR must be replaced with name of the configured service, e\.g\. \fBGogs\fR\.
+.
+.TP
+\fIgit config\fR \fBissue\.<service>\.token\fR \fItoken\fR
+The user API token for the configured remote issue tracker, this can be usually be acquired through the web interface\. \fB<service>\fR must be replaced with name of the configured service, e\.g\. \fBGogs\fR\.
+.
+.TP
+\fIgit config\fR \fBissue\.<service>\.remote\fR \fIremote\fR
+By default \fBgit\-issue\fR uses \fBorigin\fR when attempting to determine the HTTP URL of a service, if \fBorigin\fR does not point to the remote issue tracker setting \fIremote\fR will override the default behaviour\. \fB<service>\fR must be replaced with name of the configured service, e\.g\. \fBGogs\fR\.
+.
+.P
+\fBgit\-issue\fR attempts to determine which editor to use when editing messages in the same way as git(1), following are the steps taken to determine which editor to use\.
+.
+.TP
+\fIgit config \-\-get\fR \fBcore\.editor\fR
+This is the first choice and is the same editor as used for git\-commit(1) messages\.
+.
+.TP
+\fBEDITOR\fR
+If \fBcore\.editor\fR is not set then the \fBEDITOR\fR environment variable is inspected\.
+.
+.TP
+\fIvi\fR
+Finally if neither of the above are set \fBgit\-issue\fR falls back to using the venerable vi(1) editor\.
+.
+.SH "RETURN VALUES"
+.
+.TP
+\fB0\fR
+Success, no error occurred\.
+.
+.TP
+\fB1\fR
+Failure, a fatal error has occurred\.
+.
+.TP
+\fB130\fR
+Failure, user interrupt has occurred\.
+.
+.P
+Any other error codes are propagated from the underlying command, i\.e\. git\-config(1)\.
+.
+.SH "COMPLETIONS"
+\fBgit\-issue\fR provides zsh(1) completions by default, the completions are installed relative to the command line tool in \fBshare/zsh/site\-functions\fR\. If the install went as expected these should be available next time \fBcompinit\fR is invoked, however if completions are not working check please check that the \fB_git\-issue\fR file resides in a directory in the \fBfpath\fR array, refer to zshbuiltins(1) and zshcompsys(1) for more information\.
+.
+.SH "SECURITY CONSIDERATIONS"
+\fBgit\-issue\fR relies on service API tokens to be stored in git\-config(1) files, ensure that these files have appropriate permissions and that the system is secure (password protected) when not attended to avoid data loss or destructive activities occurring in your absence\.
+.
+.SH "BUGS"
+.
+.IP "\(bu" 4
+\fBGogs\fR does not support editing \fIlabels\fR, a warning will be omitted if this is attempted\.
+.
+.IP "" 0
+.
+.P
+Please report any issues on GitHub \fIhttps://github\.com/kbenzie/git\-issue/issues\fR\.
+.
+.SH "HISTORY"
+0\.1\.0 \- Support \fBGogs\fR service\.
+.
+.SH "AUTHOR"
+Kenneth Benzie
+.
+.SH "COPYRIGHT"
+MIT License
+.
+.P
+Copyright 2017 Kenneth Benzie
+.
+.P
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+.
+.P
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software\.
+.
+.P
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT\. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE\.
+.
+.SH "SEE ALSO"
+git(1) git\-config(1) git\-commit(1) less(1) zsh(1) zshbuiltins(1) zshcompsys(1)

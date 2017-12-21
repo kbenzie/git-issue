@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv='content-type' value='text/html;charset=utf8'>
+  <meta name='generator' value='Ronn/v0.7.3 (http://github.com/rtomayko/ronn/tree/0.7.3)'>
+  <title>git-issue(1) - Manage remote Git issue trackers</title>
+  <style type='text/css' media='all'>
+  /* style: man */
+  body#manpage {margin:0}
+  .mp {max-width:100ex;padding:0 9ex 1ex 4ex}
+  .mp p,.mp pre,.mp ul,.mp ol,.mp dl {margin:0 0 20px 0}
+  .mp h2 {margin:10px 0 0 0}
+  .mp > p,.mp > pre,.mp > ul,.mp > ol,.mp > dl {margin-left:8ex}
+  .mp h3 {margin:0 0 0 4ex}
+  .mp dt {margin:0;clear:left}
+  .mp dt.flush {float:left;width:8ex}
+  .mp dd {margin:0 0 0 9ex}
+  .mp h1,.mp h2,.mp h3,.mp h4 {clear:left}
+  .mp pre {margin-bottom:20px}
+  .mp pre+h2,.mp pre+h3 {margin-top:22px}
+  .mp h2+pre,.mp h3+pre {margin-top:5px}
+  .mp img {display:block;margin:auto}
+  .mp h1.man-title {display:none}
+  .mp,.mp code,.mp pre,.mp tt,.mp kbd,.mp samp,.mp h3,.mp h4 {font-family:monospace;font-size:14px;line-height:1.42857142857143}
+  .mp h2 {font-size:16px;line-height:1.25}
+  .mp h1 {font-size:20px;line-height:2}
+  .mp {text-align:justify;background:#fff}
+  .mp,.mp code,.mp pre,.mp pre code,.mp tt,.mp kbd,.mp samp {color:#131211}
+  .mp h1,.mp h2,.mp h3,.mp h4 {color:#030201}
+  .mp u {text-decoration:underline}
+  .mp code,.mp strong,.mp b {font-weight:bold;color:#131211}
+  .mp em,.mp var {font-style:italic;color:#232221;text-decoration:none}
+  .mp a,.mp a:link,.mp a:hover,.mp a code,.mp a pre,.mp a tt,.mp a kbd,.mp a samp {color:#0000ff}
+  .mp b.man-ref {font-weight:normal;color:#434241}
+  .mp pre {padding:0 4ex}
+  .mp pre code {font-weight:normal;color:#434241}
+  .mp h2+pre,h3+pre {padding-left:0}
+  ol.man-decor,ol.man-decor li {margin:3px 0 10px 0;padding:0;float:left;width:33%;list-style-type:none;text-transform:uppercase;color:#999;letter-spacing:1px}
+  ol.man-decor {width:100%}
+  ol.man-decor li.tl {text-align:left}
+  ol.man-decor li.tc {text-align:center;letter-spacing:4px}
+  ol.man-decor li.tr {text-align:right;float:right}
+  </style>
+  <style type='text/css' media='all'>
+  /* style: toc */
+  .man-navigation {display:block !important;position:fixed;top:0;left:113ex;height:100%;width:100%;padding:48px 0 0 0;border-left:1px solid #dbdbdb;background:#eee}
+  .man-navigation a,.man-navigation a:hover,.man-navigation a:link,.man-navigation a:visited {display:block;margin:0;padding:5px 2px 5px 30px;color:#999;text-decoration:none}
+  .man-navigation a:hover {color:#111;text-decoration:underline}
+  </style>
+</head>
+<!--
+  The following styles are deprecated and will be removed at some point:
+  div#man, div#man ol.man, div#man ol.head, div#man ol.man.
+
+  The .man-page, .man-decor, .man-head, .man-foot, .man-title, and
+  .man-navigation should be used instead.
+-->
+<body id='manpage'>
+  <div class='mp' id='man'>
+
+  <div class='man-navigation' style='display:none'>
+    <a href="#NAME">NAME</a>
+    <a href="#SYNOPSIS">SYNOPSIS</a>
+    <a href="#DESCRIPTION">DESCRIPTION</a>
+    <a href="#COMMANDS">COMMANDS</a>
+    <a href="#OPTIONS">OPTIONS</a>
+    <a href="#SYNTAX">SYNTAX</a>
+    <a href="#ENVIRONMENT">ENVIRONMENT</a>
+    <a href="#RETURN-VALUES">RETURN VALUES</a>
+    <a href="#COMPLETIONS">COMPLETIONS</a>
+    <a href="#SECURITY-CONSIDERATIONS">SECURITY CONSIDERATIONS</a>
+    <a href="#BUGS">BUGS</a>
+    <a href="#HISTORY">HISTORY</a>
+    <a href="#AUTHOR">AUTHOR</a>
+    <a href="#COPYRIGHT">COPYRIGHT</a>
+    <a href="#SEE-ALSO">SEE ALSO</a>
+  </div>
+
+  <ol class='man-decor man-head man head'>
+    <li class='tl'>git-issue(1)</li>
+    <li class='tc'>git-issue manual</li>
+    <li class='tr'>git-issue(1)</li>
+  </ol>
+
+  <h2 id="NAME">NAME</h2>
+<p class="man-name">
+  <code>git-issue</code> - <span class="man-whatis">Manage remote Git issue trackers</span>
+</p>
+
+<h2 id="SYNOPSIS">SYNOPSIS</h2>
+
+<p><code>git issue</code> [<code>-h</code>]<br />
+<code>git issue create</code> [<code>-m</code>] [<code>-a</code>] [<code>-s</code>] [<code>-l</code>]<br />
+<code>git issue edit</code> [<code>-m</code>] [<code>-n</code>] [<code>-a</code>] [<code>-s</code>] [<code>-l</code>] <em>number</em><br />
+<code>git issue close</code> [<code>-m</code>] [<code>-n</code>] <em>number</em><br />
+<code>git issue reopen</code> <em>number</em><br />
+<code>git issue comment</code> [<code>-m</code>] <em>number</em><br />
+<code>git issue browse</code> [<code>-u</code>] <em>number</em><br />
+<code>git issue list</code> [{<em>open</em>,<em>closed</em>,<em>all</em>}]<br />
+<code>git issue show</code> <em>number</em></p>
+
+<h2 id="DESCRIPTION">DESCRIPTION</h2>
+
+<p><code>git-issue</code> provides a command line interface to remote issue trackers allowing
+users to manage issues in the same way they manage <a class="man-ref" href="https://git-scm.com/docs/git">git<span class="s">(1)</span></a> repositories. A remote
+issue tracker is referred to as <em>service</em>. Multiple <em>service</em> providers can be
+supported by <code>git-issue</code>, see <a href="#HISTORY" data-bare-link="true">HISTORY</a> for the supported <em>service</em>
+list. <code>git-issue</code> determines which <em>service</em> to use by querying <code>issue.service</code>.
+Authentication with the <em>service</em> is usually performed using an API token,
+<code>git-issue</code> queries <code>issue.&lt;service>.token</code> to gain access to the <em>service</em>.</p>
+
+<h2 id="COMMANDS">COMMANDS</h2>
+
+<dl>
+<dt><code>git issue create</code></dt><dd>Create a new issue, when <code>-m</code> is not specified an editor will be opened for
+the user to describe the issue.</dd>
+<dt><code>git issue edit</code></dt><dd>Edit an existing issue, when <code>-m</code> is not specified an editor will be opened
+for the user to edit the existing issue description.</dd>
+<dt><code>git issue close</code></dt><dd>Close an existing open issue, when <code>-n</code> is not specified an editor will be
+opened for the user to comment on whey the issue is being closed.</dd>
+<dt><code>git issue reopen</code></dt><dd>Reopen an existing closed issued.</dd>
+<dt><code>git issue comment</code></dt><dd>Comment on an existing issue.</dd>
+<dt><code>git issue browse</code></dt><dd>Open an existing issues URL in a new tab in default browser.</dd>
+<dt><code>git issue list</code></dt><dd>List all <em>open</em>, <em>closed</em>, or <em>all</em> existing issues, output is paged using
+<a class="man-ref" href="https://linux.die.net/man/1/less">less<span class="s">(1)</span></a>.</dd>
+<dt><code>git issue show</code></dt><dd>Show an existing issue, including comments and state changes, output is paged
+using <a class="man-ref" href="https://linux.die.net/man/1/less">less<span class="s">(1)</span></a>.</dd>
+</dl>
+
+
+<h2 id="OPTIONS">OPTIONS</h2>
+
+<dl>
+<dt><code>-h</code>, <code>--help</code></dt><dd>Show this manual and exit.</dd>
+<dt><code>-m</code> <em>message</em>, <code>--message</code> <em>message</em></dt><dd>Use the given <em>message</em> as the issue title, editor will not be opened to edit
+a message, is mutually exclusive with <code>-n</code>.</dd>
+<dt><code>-n</code>, <code>--no-message</code></dt><dd>Do not open the editor to edit a message, is mutually exclusive with <code>-m</code>.</dd>
+<dt><code>-a</code> <em>assignee</em>, <code>--assignee</code> <em>assignee</em></dt><dd>Search term for a user to assign the issue to.</dd>
+<dt><code>-s</code> <em>milestone</em>, <code>--milestone</code> <em>milestone</em></dt><dd>Name of the <em>milestone</em> to assign to the issue.</dd>
+<dt><code>-l</code> <em>label</em>, <code>--label</code> <em>label</em></dt><dd>Name of a <em>label</em> to assign to the issue, can be repeated to assign multiple
+<em>label</em>'s to the issue.</dd>
+<dt class="flush"><em>number</em></dt><dd>The issue number to manage, the actual representation may change dependant on
+configured service.</dd>
+<dt><em>open</em>, <em>closed</em>, <em>all</em></dt><dd>The current state of issues to list, if the default is <em>open</em>.</dd>
+</dl>
+
+
+<h2 id="SYNTAX">SYNTAX</h2>
+
+<p>The syntax of editor message is dependant on the service providing the issue
+tracker, by default this will be <a href="https://daringfireball.net/projects/markdown/syntax">Markdown</a> or some variation of it
+i.e. <a href="https://github.github.com/gfm/">GitHub Flavoured Markdown</a>. <code>git-issue</code> generally does
+not process the text input by the user, with one exception; when editing a
+message in the editor the second line in the file will be ignored as a separator
+between the <em>title</em> and <em>body</em> of the issue.</p>
+
+<h2 id="ENVIRONMENT">ENVIRONMENT</h2>
+
+<p><code>git-issue</code> takes advantage of <a class="man-ref" href="https://git-scm.com/docs/git-config">git-config<span class="s">(1)</span></a> to store information which it
+requires to function.</p>
+
+<dl>
+<dt><em>git config</em> <code>issue.service</code> <em>service</em></dt><dd>Name of the service which provides the remote issue tracker, e.g. <code>Gogs</code>.</dd>
+<dt><em>git config</em> <code>issue.&lt;service>.url</code> <em>url</em></dt><dd>HTTP URL of the service providing the remote issue tracker, <code>git-issue</code> will
+attempt to deduce this value if it is not set by inspecting the repositories
+remote URL and is thus not usually required to be manually configured.
+<code>&lt;service></code> must be replaced with name of the configured service, e.g. <code>Gogs</code>.</dd>
+<dt><em>git config</em> <code>issue.&lt;service>.token</code> <em>token</em></dt><dd>The user API token for the configured remote issue tracker, this can be
+usually be acquired through the web interface. <code>&lt;service></code> must be replaced
+with name of the configured service, e.g. <code>Gogs</code>.</dd>
+<dt><em>git config</em> <code>issue.&lt;service>.remote</code> <em>remote</em></dt><dd>By default <code>git-issue</code> uses <code>origin</code> when attempting to determine the HTTP URL
+of a service, if <code>origin</code> does not point to the remote issue tracker setting
+<em>remote</em> will override the default behaviour. <code>&lt;service></code> must be replaced
+with name of the configured service, e.g. <code>Gogs</code>.</dd>
+</dl>
+
+
+<p><code>git-issue</code> attempts to determine which editor to use when editing messages in
+the same way as <a class="man-ref" href="https://git-scm.com/docs/git">git<span class="s">(1)</span></a>, following are the steps taken to determine which editor
+to use.</p>
+
+<dl>
+<dt><em>git config --get</em> <code>core.editor</code></dt><dd>This is the first choice and is the same editor as used for <a class="man-ref" href="https://git-scm.com/docs/git-commit">git-commit<span class="s">(1)</span></a>
+messages.</dd>
+<dt class="flush"><code>EDITOR</code></dt><dd>If <code>core.editor</code> is not set then the <code>EDITOR</code> environment variable is
+inspected.</dd>
+<dt class="flush"><em>vi</em></dt><dd>Finally if neither of the above are set <code>git-issue</code> falls back to using the
+venerable <a class="man-ref" href="https://linux.die.net/man/1/vi">vi<span class="s">(1)</span></a> editor.</dd>
+</dl>
+
+
+<h2 id="RETURN-VALUES">RETURN VALUES</h2>
+
+<dl>
+<dt class="flush"><code>0</code></dt><dd><p>Success, no error occurred.</p></dd>
+<dt class="flush"><code>1</code></dt><dd><p>Failure, a fatal error has occurred.</p></dd>
+<dt class="flush"><code>130</code></dt><dd><p>Failure, user interrupt has occurred.</p></dd>
+</dl>
+
+
+<p>Any other error codes are propagated from the underlying command, i.e.
+<a class="man-ref" href="https://git-scm.com/docs/git-config">git-config<span class="s">(1)</span></a>.</p>
+
+<h2 id="COMPLETIONS">COMPLETIONS</h2>
+
+<p><code>git-issue</code> provides <a class="man-ref" href="https://linux.die.net/man/1/zsh">zsh<span class="s">(1)</span></a> completions by default, the completions are
+installed relative to the command line tool in <code>share/zsh/site-functions</code>. If
+the install went as expected these should be available next time <code>compinit</code> is
+invoked, however if completions are not working check please check that the
+<code>_git-issue</code> file resides in a directory in the <code>fpath</code> array, refer to
+<a class="man-ref" href="https://linux.die.net/man/1/zshbuiltins">zshbuiltins<span class="s">(1)</span></a> and <a class="man-ref" href="https://linux.die.net/man/1/zshcompsys">zshcompsys<span class="s">(1)</span></a> for more information.</p>
+
+<h2 id="SECURITY-CONSIDERATIONS">SECURITY CONSIDERATIONS</h2>
+
+<p><code>git-issue</code> relies on service API tokens to be stored in <a class="man-ref" href="https://git-scm.com/docs/git-config">git-config<span class="s">(1)</span></a> files,
+ensure that these files have appropriate permissions and that the system is
+secure (password protected) when not attended to avoid data loss or destructive
+activities occurring in your absence.</p>
+
+<h2 id="BUGS">BUGS</h2>
+
+<ul>
+<li><code>Gogs</code> does not support editing <em>labels</em>, a warning will be omitted if this is
+attempted.</li>
+</ul>
+
+
+<p>Please report any issues on <a href="https://github.com/kbenzie/git-issue/issues">GitHub</a>.</p>
+
+<h2 id="HISTORY">HISTORY</h2>
+
+<p>0.1.0 - Support <code>Gogs</code> service.</p>
+
+<h2 id="AUTHOR">AUTHOR</h2>
+
+<p>Kenneth Benzie</p>
+
+<h2 id="COPYRIGHT">COPYRIGHT</h2>
+
+<p>MIT License</p>
+
+<p>Copyright 2017 Kenneth Benzie</p>
+
+<p>Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:</p>
+
+<p>The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.</p>
+
+<p>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</p>
+
+<h2 id="SEE-ALSO">SEE ALSO</h2>
+
+<p><a class="man-ref" href="https://git-scm.com/docs/git">git<span class="s">(1)</span></a> <a class="man-ref" href="https://git-scm.com/docs/git-config">git-config<span class="s">(1)</span></a> <a class="man-ref" href="https://git-scm.com/docs/git-commit">git-commit<span class="s">(1)</span></a> <a class="man-ref" href="https://linux.die.net/man/1/less">less<span class="s">(1)</span></a> <a class="man-ref" href="https://linux.die.net/man/1/zsh">zsh<span class="s">(1)</span></a> <a class="man-ref" href="https://linux.die.net/man/1/zshbuiltins">zshbuiltins<span class="s">(1)</span></a> <a class="man-ref" href="https://linux.die.net/man/1/zshcompsys">zshcompsys<span class="s">(1)</span></a></p>
+
+
+  <ol class='man-decor man-foot man foot'>
+    <li class='tl'>Kenneth Benzie</li>
+    <li class='tc'>December 2017</li>
+    <li class='tr'>git-issue(1)</li>
+  </ol>
+
+  </div>
+</body>
+</html>
