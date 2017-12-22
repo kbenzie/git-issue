@@ -163,6 +163,8 @@ Please report any issues on [GitHub][issues].
 
 ## HISTORY
 
+0.2.1 - Fix zsh(1) completions install location.
+
 0.2.0 - Support `GitHub` service.
 
 0.1.3 - Refactor in preparation for additional services.
