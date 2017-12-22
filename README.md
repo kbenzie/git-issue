@@ -153,6 +153,8 @@ Please report any issues on [GitHub][issues].
 
 ## HISTORY
 
+0.1.3 - Refactor in preparation for additional services.
+
 0.1.2 - Fix install of data files in setup.py.
 
 0.1.1 - Fix bug in git issue comment.

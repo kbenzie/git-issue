@@ -3,40 +3,14 @@
 from __future__ import print_function
 
 from builtins import super
-from os import devnull
-from subprocess import CalledProcessError, check_output
 from warnings import warn
 
-from giturlparse import parse
+from git_issue import GitIssueError
+from git_issue.service import (Issue, IssueComment, IssueEvent, IssueNumber,
+                               Label, Milestone, Service, User,
+                               get_repo_owner_name, get_resource, get_token)
 from past.builtins import basestring
 from requests import get, patch, post
-
-from git_issue import GitIssueError
-from git_issue.service import (Issue, IssueComment, IssueNumber, Label,
-                               Milestone, Service, User, get_remote, get_url)
-
-
-def _get_repo_owner_name_():
-    with open(devnull, 'w+b') as DEVNULL:
-        try:
-            remote = parse(
-                check_output(
-                    ['git', 'config', '--get', 'remote.%s.url' % get_remote(
-                        'Gogs')],
-                    stderr=DEVNULL))
-        except CalledProcessError:
-            raise GitIssueError('failed to determine remote url')
-        return '%s/%s' % (remote.owner, remote.name)
-
-
-def _get_header_():
-    try:
-        token = check_output(
-            ['git', 'config', '--get', 'issue.Gogs.token']).strip()
-    except CalledProcessError:
-        raise GitIssueError('failed to get Gogs API token, specify using:\n'
-                            'git config issue.Gogs.token <token>')
-    return {'Authorization': 'token %s' % token}
 
 
 def _check_assignee_(assignee):
@@ -69,11 +43,11 @@ class Gogs(Service):
 
     def __init__(self):
         super().__init__()
-        self.url = get_url('Gogs')
+        self.url = 'https://%s' % get_resource('Gogs')
         self.api_url = '%s/api/v1' % self.url
         self.repos_url = '%s/repos/%s' % (self.api_url,
-                                          _get_repo_owner_name_())
-        self.header = _get_header_()
+                                          get_repo_owner_name('Gogs'))
+        self.header = {'Authorization': 'token %s' % get_token('Gogs')}
 
     def create(self, title, body, **kwargs):
         # title (string) The title of the issue
@@ -115,18 +89,29 @@ class Gogs(Service):
         # Parameters are not documented, this is from the Gogs issue page URL.
         #   ?type=all&sort=&state=closed&labels=0&milestone=0&assignee=0
         # state seems to be the only one which works for api/v1.
-        if state not in ['open', 'closed']:
+        if state not in ['open', 'closed', 'all']:
             raise ValueError(
                 'state must be a string and one of "open", "closed", or "all"')
-        response = get('%s/issues' % self.repos_url,
-                       headers=self.header,
-                       params={'state': state})
-        if response.status_code == 200:
-            issues = [GogsIssue(issue, self.repos_url, self.header)
-                      for issue in response.json()]
-        else:
-            raise GitIssueError(response.reason)
-        return issues
+        issues = []
+        # Gogs does't not support 'all' so we must iterate over 'open' and
+        # 'closed' states to get all issues.
+        for state in {'open': ['open'],
+                      'closed': ['closed'],
+                      'all': ['open', 'closed']}[state]:
+            next_url = '%s/issues' % self.repos_url
+            while next_url:
+                response = get(next_url,
+                               headers=self.header,
+                               params={'state': state})
+                if response.status_code == 200:
+                    issues += [GogsIssue(issue, self.repos_url, self.header)
+                               for issue in response.json()]
+                    # If a link to the next page of issues present, use it.
+                    next_url = response.links['next'][
+                        'url'] if 'next' in response.links else None
+                else:
+                    raise GitIssueError(response.reason)
+        return reversed(sorted(issues))
 
     def labels(self):
         response = get('%s/labels' % self.repos_url, headers=self.header)
@@ -178,6 +163,7 @@ class GogsIssue(Issue):
             num_comments=issue['comments'])
         self.issues_url = '%s/issues' % repos_url
         self.header = header
+        self.cache = {}
 
     def comment(self, body):
         response = post(
@@ -189,13 +175,42 @@ class GogsIssue(Issue):
         else:
             raise GitIssueError(response.reason)
 
-    def comments(self):
+    def _comments_(self):
         response = get('%s/%r/comments' % (self.issues_url, self.number),
                        headers=self.header)
         if response.status_code == 200:
-            return [GogsIssueComment(comment) for comment in response.json()]
+            self.cache['comments'] = response.json()
         else:
             raise GitIssueError(response.reason)
+
+    def comments(self):
+        # NOTE: Gogs reports events as comments with an empty body, so we cache
+        # the data instead of getting it twice.
+        if 'comments' not in self.cache:
+            self._comments_()
+        comments = []
+        for comment in self.cache['comments']:
+            if len(comment['body']) > 0:
+                comments.append(GogsIssueComment(comment))
+        return comments
+
+    def events(self):
+        # NOTE: Gogs reports events as comments with an empty body, so we cache
+        # the data instead of getting it twice.
+        if 'comments' not in self.cache:
+            self._comments_()
+        # NOTE: Gogs issues can begin in a closed state so to correctly
+        # determine the state change for each action we must work from issues
+        # current state and rely on the reverse order of the served comments.
+        state = self.state
+        events = []
+        for event in self.cache['comments']:
+            if len(event['body']) == 0:
+                events.append(
+                    GogsIssueEvent({'open': 'reopened',
+                                    'closed': 'closed'}[state], event))
+                state = {'open': 'closed', 'closed': 'open'}[state]
+        return events
 
     def edit(self, **kwargs):
         data = {}
@@ -263,7 +278,7 @@ class GogsIssue(Issue):
             raise GitIssueError(response.reason)
 
     def url(self):
-        return '%s/%s/issues/%r' % (get_url('Gogs'), _get_repo_owner_name_(),
+        return '%s/%s/issues/%r' % (self.url, get_repo_owner_name('Gogs'),
                                     self.number)
 
 
@@ -288,6 +303,13 @@ class GogsIssueComment(IssueComment):
     def __init__(self, comment):
         super().__init__(comment['body'], GogsUser(comment['user']),
                          comment['created_at'])
+
+
+class GogsIssueEvent(IssueEvent):
+    """Gogs IssueEvent implementation."""
+
+    def __init__(self, action, event):
+        super().__init__(action, GogsUser(event['user']), event['created_at'])
 
 
 class GogsUser(User):

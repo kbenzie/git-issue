@@ -11,11 +11,11 @@ from subprocess import (PIPE, CalledProcessError, Popen, check_call,
 from sys import stderr, stdout
 from webbrowser import open_new_tab
 
-import arrow
 from colorama import Fore
 from pick import pick
 
 from git_issue import GitIssueError, get_service
+from git_issue.service import IssueComment, IssueEvent
 
 
 def _warn_(message):
@@ -93,8 +93,7 @@ def _pick_user_(service, keyword):
         users = service.user_search(keyword)
         if len(users) > 1:
             user, _ = pick([
-                '%s (%s) <%s>' % (user.name, user.username, user.email)
-                for user in users
+                u'%s' % user for user in users
             ], 'Choose from multiple matches for: %s (select then press Enter)'
                            % keyword)
             return user
@@ -157,11 +156,13 @@ def _pager_(content):
 
 
 def _state_color_(state):
-    return {'open': Fore.GREEN, 'closed': Fore.RED}[state]
+    return {'open': Fore.GREEN,
+            'reopened': Fore.GREEN,
+            'closed': Fore.RED}[state]
 
 
 def _human_date_(date):
-    return arrow.get(date).format('ddd MMM DD HH:mm:ss YYYY ZZ')
+    return date.format('ddd MMM DD HH:mm:ss YYYY ZZ')
 
 
 def _issue_summary_(issue):
@@ -213,7 +214,7 @@ def create(service, **kwargs):
         del message[1]
     title = message[0]
     body = '\n'.join(message[1:]) if len(message) > 1 else ''
-    if len(title) == 0 and len(body) == 0:
+    if len(title.strip()) == 0 and len(body.strip()) == 0:
         raise GitIssueError('aborting due to empty message')
     service.create(
         title, body, assignee=assignee, labels=labels, milestone=milestone)
@@ -255,6 +256,8 @@ def comment(service, **kwargs):
         body = kwargs.pop('message')
     else:
         body = '\n'.join(_editor_())
+    if len(body.strip()) == 0:
+        raise GitIssueError('aborted due to empty message')
     issue.comment(body)
 
 
@@ -268,10 +271,9 @@ def close(service, **kwargs):
         if kwargs['message']:
             comment = kwargs.pop('message')
         else:
-            message = _editor_()
-            if len(message) == 0:
-                raise GitIssueError('aborted due to empty message')
-            comment = '\n'.join(message)
+            comment = '\n'.join(_editor_())
+    if len(comment.strip()) == 0:
+        raise GitIssueError('aborted due to empty message')
     issue.close(comment=comment)
 
 
@@ -287,35 +289,26 @@ def show(service, **kwargs):
     """Show detail of a single issue."""
     issue = service.issue(kwargs.pop('number'))
     output = _issue_summary_(issue)
-    state = 'open'
-    if issue.comments > 0:
-        # print(issue.comments())
-        for comment in issue.comments():
-            if len(comment.body) > 0:
-                output += [
-                    '',
-                    'Comment:  %s' % comment.author,
-                    'Date:     %s' % _human_date_(comment.created),
-                    '',
-                ]
-                output += ['    %s' % line
-                           for line in comment.body.splitlines()]
-            else:
-                # TODO: Is this specific to Gogs implementation? Might need to
-                # push this logic up to <Service>IssueComment creation logic,
-                # possibly with the addition of a state_changed member.
-                state = {'open': 'closed', 'closed': 'open'}[state]
-                output += [
-                    '',
-                    '%(color)s%(state)s%(reset)s%(user)s' % {
-                        'color': _state_color_(state),
-                        'state': {'open': 'Reopened: ',
-                                  'closed': 'Closed:   '}[state],
-                        'reset': Fore.RESET,
-                        'user': comment.author,
-                    },
-                    'Date:     %s' % _human_date_(comment.created),
-                ]
+    for item in sorted(issue.comments() + issue.events()):
+        if isinstance(item, IssueComment):
+            output += [
+                '',
+                'Comment:  %s' % item.author,
+                'Date:     %s' % _human_date_(item.created),
+                '',
+            ]
+            output += ['    %s' % line for line in item.body.splitlines()]
+        elif isinstance(item, IssueEvent):
+            output += [
+                '',
+                '%(color)s%(state)s%(reset)s%(user)s' % {
+                    'color': _state_color_(item.event),
+                    'state': ('%s:' % item.event.capitalize()).ljust(10),
+                    'reset': Fore.RESET,
+                    'user': item.actor,
+                },
+                'Date:     %s' % _human_date_(item.created),
+            ]
     _pager_('\n'.join(output))
 
 

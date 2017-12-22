@@ -5,15 +5,31 @@ from collections import namedtuple
 from os import devnull
 from subprocess import CalledProcessError, check_output
 
+import arrow
 from future.utils import with_metaclass
+from git_issue import GitIssueError
 from giturlparse import parse
 from past.builtins import basestring
 
-from git_issue import GitIssueError
+
+def get_remote(name):
+    """Get the Git remote, default to ``'origin'``.
+
+    Arguments:
+        :name: Name of the service.
+    """
+    with open(devnull, 'w+b') as DEVNULL:
+        try:
+            remote = check_output(
+                ['git', 'config', '--get', 'issue.%s.remote' % name],
+                stderr=DEVNULL).strip()
+        except CalledProcessError:
+            remote = 'origin'
+        return remote
 
 
-def get_url(name):
-    """Get the HTTP URL for the service.
+def get_resource(name):
+    """Get the resource from the Git remote URL.
 
     Arguments:
         :name: Name of the service.
@@ -34,27 +50,44 @@ def get_url(name):
                         ['git', 'config', '--get', 'remote.%s.url' %
                          get_remote(name)],
                         stderr=DEVNULL))
-                return 'https://%s' % giturl.resource
+                return '%s' % giturl.resource
             except CalledProcessError:
                 raise GitIssueError(
                     'failed to determine service HTTP URL, specify using:\n'
                     'git config issue.%s.url <url>' % name)
 
 
-def get_remote(name):
-    """Get the Git remote, default to ``'origin'``.
+def get_repo_owner_name(name):
+    """Get the owner/name of the remote.
 
     Arguments:
         :name: Name of the service.
     """
     with open(devnull, 'w+b') as DEVNULL:
         try:
-            remote = check_output(
-                ['git', 'config', '--get', 'issue.%s.remote' % name],
-                stderr=DEVNULL).strip()
+            remote = parse(
+                check_output(
+                    ['git', 'config', '--get', 'remote.%s.url' % get_remote(
+                        name)],
+                    stderr=DEVNULL))
         except CalledProcessError:
-            remote = 'origin'
-        return remote
+            raise GitIssueError('failed to determine remote url')
+        return '%s/%s' % (remote.owner, remote.name)
+
+
+def get_token(name):
+    """Get basic authentication header from API token.
+
+    Arguments:
+        :name: Name of the service.
+    """
+    try:
+        token = check_output(
+            ['git', 'config', '--get', 'issue.%s.token' % name]).strip()
+    except CalledProcessError:
+        raise GitIssueError('failed to get Gogs API token, specify using:\n'
+                            'git config issue.Gogs.token <token>')
+    return token
 
 
 class Service(with_metaclass(ABCMeta)):
@@ -65,6 +98,9 @@ class Service(with_metaclass(ABCMeta)):
     instances of this class to perform its actions.
 
     """
+
+    def __init__(self):
+        pass
 
     @abstractmethod
     def create(self, title, body, **data):
@@ -196,7 +232,7 @@ class Issue(with_metaclass(ABCMeta)):
         self.author = author
         if not isinstance(created, basestring):
             raise ValueError('created must be a string')
-        self.created = created
+        self.created = arrow.get(created)
         self.updated = kwargs.pop('updated', None)
         if self.updated and not isinstance(self.updated, basestring):
             raise ValueError('updated must be a string')
@@ -218,6 +254,9 @@ class Issue(with_metaclass(ABCMeta)):
         if self.num_comments and not isinstance(self.num_comments, int):
             raise ValueError('comments must be an integer')
 
+    def __lt__(self, other):
+        return self.created < other.created
+
     @abstractmethod
     def comment(self, body):
         """Add a comment to the issue.
@@ -236,6 +275,18 @@ class Issue(with_metaclass(ABCMeta)):
 
         Returns:
             :list: Of ``IssueComment`` instances.
+
+        Raises:
+            :GitIssueError: Containing message about the error.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def events(self):
+        """Get list of events.
+
+        Returns:
+            :list: Of ``IssueEvent`` instances.
 
         Raises:
             :GitIssueError: Containing message about the error.
@@ -300,6 +351,9 @@ class IssueNumber(with_metaclass(ABCMeta)):
     used when interacting with the service API, such as ``1``.
     """
 
+    def __init__(self):
+        pass
+
     @abstractmethod
     def __str__(self):
         raise NotImplementedError
@@ -310,7 +364,7 @@ class IssueNumber(with_metaclass(ABCMeta)):
 
 
 class IssueComment(with_metaclass(ABCMeta)):
-    """Generic class to represent and issue comment.
+    """Generic class to represent an issue comment.
 
     Arguments:
         :body: Comment text body.
@@ -320,8 +374,40 @@ class IssueComment(with_metaclass(ABCMeta)):
 
     def __init__(self, body, author, created):
         self.body = body
+        if not isinstance(author, User):
+            raise ValueError('author must be a subclass of User')
         self.author = author
-        self.created = created
+        if not created or not isinstance(created, basestring):
+            raise ValueError('created must be a string')
+        self.created = arrow.get(created)
+
+    def __lt__(self, other):
+        return self.created < other.created
+
+
+class IssueEvent(with_metaclass(ABCMeta)):
+    """Generic class to represent an issue event.
+
+    Arguments:
+        :event: String representation of the event action.
+        :actor: ``User`` to action the event.
+        :created: UTC encoded date string of event creation.
+    """
+
+    def __init__(self, event, actor, created):
+        if event not in ['closed', 'reopened']:
+            raise ValueError(
+                'event must be a string of either "closed" or "reopened"')
+        self.event = event
+        if not isinstance(actor, User):
+            raise ValueError('actor must be a subclass of User')
+        self.actor = actor
+        if not created or not isinstance(created, basestring):
+            raise ValueError('created must be a string')
+        self.created = arrow.get(created)
+
+    def __lt__(self, other):
+        return self.created < other.created
 
 
 class User(with_metaclass(ABCMeta)):
@@ -339,7 +425,14 @@ class User(with_metaclass(ABCMeta)):
         self.name = name
 
     def __str__(self):
-        return '%s (%s) <%s>' % (self.name, self.username, self.email)
+        parts = []
+        if self.name:
+            parts.append(self.name)
+        if self.username:
+            parts.append('(%s)' % self.username)
+        if self.email:
+            parts.append('<%s>' % self.email)
+        return ' '.join(parts)
 
 
 class Label(with_metaclass(ABCMeta)):
@@ -347,7 +440,7 @@ class Label(with_metaclass(ABCMeta)):
 
     Arguments:
         :name: Name of the label.
-        :color: 
+        :color: 6 character hexidecimal encoded color string.
     """
 
     def __init__(self, name, color):
