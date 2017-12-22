@@ -18,10 +18,10 @@ git-issue(1) -- Manage remote Git issue trackers
 `git-issue` provides a command line interface to remote issue trackers allowing
 users to manage issues in the same way they manage git(1) repositories. A remote
 issue tracker is referred to as _service_. Multiple _service_ providers can be
-supported by `git-issue`, see [HISTORY](#HISTORY) for the supported _service_
+supported by `git-issue`, see [SERVICES](#SERVICES) for the supported _service_
 list. `git-issue` determines which _service_ to use by querying `issue.service`.
-Authentication with the _service_ is usually performed using an API token,
-`git-issue` queries `issue.<service>.token` to gain access to the _service_.
+Authentication with the _service_ is performed using an API token, `git-issue`
+queries `issue.<service>.token` to gain access to the _service_.
 
 ## COMMANDS
 
@@ -68,6 +68,16 @@ Authentication with the _service_ is usually performed using an API token,
   configured service.
 * _open_, _closed_, _all_:
   The current state of issues to list, if the default is _open_.
+
+## SERVICES
+
+* `GitHub`:
+  To enable this service set `issue.service` to `GitHub` and
+  `issue.GitHub.token` to `<username>`_:_`<token>` replacing `<username>` with
+  your GitHub login and `<token>` with a [personal access token][github-token].
+* `Gogs`:
+  To enable this service set `issue.service` to `Gogs` and `issue.Gogs.token` to
+  `<token>` created at `https://your.gogs.url/user/settings/applications`.
 
 ## SYNTAX
 
@@ -153,6 +163,8 @@ Please report any issues on [GitHub][issues].
 
 ## HISTORY
 
+0.2.0 - Support `GitHub` service.
+
 0.1.3 - Refactor in preparation for additional services.
 
 0.1.2 - Fix install of data files in setup.py.
@@ -192,6 +204,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 git(1) git-config(1) git-commit(1) less(1) zsh(1) zshbuiltins(1) zshcompsys(1)
 
+[github-token]: https://github.com/settings/tokens
 [markdown]: https://daringfireball.net/projects/markdown/syntax
 [github-markdown]: https://github.github.com/gfm/
 [issues]: https://github.com/kbenzie/git-issue/issues

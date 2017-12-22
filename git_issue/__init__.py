@@ -19,8 +19,12 @@ def get_service():
             ['git', 'config', '--get', 'issue.service']).strip()
         try:
             # NOTE: Import and add new services here.
+            from git_issue.github import GitHub
             from git_issue.gogs import Gogs
-            service = {'Gogs': Gogs()}[name]
+            service = {
+                'GitHub': GitHub(),
+                'Gogs': Gogs(),
+            }[name]
         except KeyError:
             raise GitIssueError('invalid issue service: %s' % name)
     except CalledProcessError:
