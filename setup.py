@@ -30,6 +30,7 @@ setup(
         'future',
         'git-url-parse',
         'pick',
+        'requests',
     ],
     entry_points={
         'console_scripts': ['git-issue=git_issue.cli:main'],

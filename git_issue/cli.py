@@ -12,10 +12,9 @@ from sys import stderr, stdout
 from webbrowser import open_new_tab
 
 from colorama import Fore
-from pick import pick
-
 from git_issue import GitIssueError, get_service
 from git_issue.service import IssueComment, IssueEvent
+from pick import pick
 
 
 def _warn_(message):
