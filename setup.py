@@ -7,13 +7,13 @@ from setuptools import find_packages, setup
 data_files = []
 if system() != 'Windows':
     data_files += [
-        ('share/man/man1', ['man/git-issue.1']),
+        ('share/man/man1', ['docs/git-issue.1']),
         ('share/zsh/site-functions', ['completion/zsh/_git-issue']),
     ]
 
 setup(
     name='git_issue',
-    version='0.2.1',
+    version='0.2.3',
     description='Manage remote Git issue trackers',
     url='https://code.infektor.net/benie/git-issue',
     author='Kenneth Benzie',

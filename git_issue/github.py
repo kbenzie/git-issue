@@ -120,8 +120,9 @@ class GitHub(Service):
             raise GitIssueError(response.reason)
 
     def labels(self):
-        response = get(
-            '%s/labels' % self.repos_url, auth=self.auth, headers=self.headers)
+        response = get('%s/labels' % self.repos_url,
+                       auth=self.auth,
+                       headers=self.headers)
         if response.status_code == 200:
             return [GitHubLabel(label) for label in response.json()]
         else:
