@@ -4,6 +4,9 @@ from platform import system
 
 from setuptools import find_packages, setup
 
+with open('README.rst', 'r') as readme:
+    long_description = readme.read()
+
 data_files = []
 if system() != 'Windows':
     data_files += [
@@ -12,17 +15,23 @@ if system() != 'Windows':
     ]
 
 setup(
-    name='git_issue',
+    name='git-issue',
     version='0.2.3',
     description='Manage remote Git issue trackers',
-    url='https://code.infektor.net/benie/git-issue',
+    long_description=long_description,
+    url='https://kbenzie.github.io/git-issue',
     author='Kenneth Benzie',
     autho_email='benie@infektor.net',
     license='MIT',
     classifiers=[
-        'Development Status :: 1 - Planning',
+        'Development Status :: 3 - Alpha',
+        'Environment :: Console',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: MIT License',
+        'Topic :: Software Development :: Bug Tracking',
+        'Topic :: Software Development :: Version Control :: Git',
     ],
-    keywords='git issue track gogs',
+    keywords='command-line issue-tracker git github gogs',
     packages=find_packages(exclude=['man']),
     install_requires=[
         'arrow',
