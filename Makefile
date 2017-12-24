@@ -8,11 +8,11 @@ options = --date=2017-12-21 \
 	  --style=toc \
 	  --pipe
 
-docs/git-issue.1: docs/git-issue.ronn docs/index.txt
-	cd docs && ronn -r $(options) git-issue.ronn > git-issue.1
+docs/git-issue.1: README.md index.txt
+	ronn -r $(options) README.md > docs/git-issue.1
 
-docs/index.html: docs/git-issue.ronn docs/index.txt
-	cd docs && ronn -5 $(options) git-issue.ronn > index.html
+docs/index.html: README.md index.txt
+	ronn -5 $(options) README.md > docs/index.html
 
 .PHONY: clean
 clean:
