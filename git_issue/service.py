@@ -1,5 +1,7 @@
 """Classes representing generic issue services."""
 
+from __future__ import print_function
+
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
 from os import devnull
@@ -28,6 +30,13 @@ def get_remote(name):
         return remote
 
 
+def _check_service_url_(name, url):
+    if not url.endswith('.git'):
+        raise GitIssueError(
+            'invalid issue.%s.url expected ".git" suffix: %s' %
+            (name, url))
+
+
 def get_resource(name):
     """Get the resource from the Git remote URL.
 
@@ -39,22 +48,21 @@ def get_resource(name):
     """
     with open(devnull, 'w+b') as DEVNULL:
         try:
-            return check_output(
-                ['git', 'config', '--get'
-                 'issue.%s.url' % name],
+            url = check_output(
+                ['git', 'config', '--get', 'issue.%s.url' % name],
                 stderr=DEVNULL).strip()
+            _check_service_url_(name, url)
         except CalledProcessError:
             try:
-                giturl = parse(
-                    check_output(
-                        ['git', 'config', '--get', 'remote.%s.url' %
-                         get_remote(name)],
-                        stderr=DEVNULL))
-                return '%s' % giturl.resource
+                url = check_output(
+                    ['git', 'config', '--get',
+                     'remote.%s.url' % get_remote(name)],
+                    stderr=DEVNULL).strip()
             except CalledProcessError:
                 raise GitIssueError(
                     'failed to determine service HTTP URL, specify using:\n'
                     'git config issue.%s.url <url>' % name)
+    return parse(url).resource
 
 
 def get_repo_owner_name(name):
@@ -65,14 +73,22 @@ def get_repo_owner_name(name):
     """
     with open(devnull, 'w+b') as DEVNULL:
         try:
-            remote = parse(
-                check_output(
-                    ['git', 'config', '--get', 'remote.%s.url' % get_remote(
-                        name)],
-                    stderr=DEVNULL))
+            url = check_output(
+                ['git', 'config', '--get', 'issue.%s.url' % name],
+                stderr=DEVNULL).strip()
+            _check_service_url_(name, url)
         except CalledProcessError:
-            raise GitIssueError('failed to determine remote url')
-        return '%s/%s' % (remote.owner, remote.name)
+            try:
+                url = check_output(
+                    ['git', 'config', '--null', '--get',
+                     'remote.%s.url' % get_remote(name)],
+                    stderr=DEVNULL).strip()
+            except CalledProcessError:
+                raise GitIssueError(
+                    'failed to determine repository HTTP URL, specify using:\n'
+                    'git config issue.%s.url <url>' % name)
+    remote = parse(url)
+    return '%s/%s' % (remote.owner, remote.name)
 
 
 def get_token(name):

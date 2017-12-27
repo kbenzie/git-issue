@@ -163,6 +163,8 @@ Please report any issues on [GitHub][issues].
 
 ## HISTORY
 
+0.2.4 - Respect `issue.<service>.url` when set.
+
 0.2.3 - Move generated documentation to docs.
 
 0.2.2 - Fix pip install & service instantiation.

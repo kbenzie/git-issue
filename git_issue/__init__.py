@@ -1,5 +1,7 @@
 """Package root for git_issue."""
 
+from __future__ import print_function
+
 from subprocess import CalledProcessError, check_output
 
 
@@ -21,7 +23,7 @@ def get_service():
             # NOTE: Import and add new services here.
             from git_issue.github import GitHub
             from git_issue.gogs import Gogs
-            service = {
+            return {
                 'GitHub': GitHub,
                 'Gogs': Gogs,
             }[name]()
@@ -30,4 +32,3 @@ def get_service():
     except CalledProcessError:
         raise GitIssueError('issue service not set, specify using:\n'
                             'git config issue.service <service>')
-    return service

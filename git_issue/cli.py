@@ -3,7 +3,7 @@
 from __future__ import print_function
 
 import warnings
-from argparse import ArgumentParser
+from argparse import SUPPRESS, ArgumentParser
 from os import environ, remove
 from os.path import join
 from subprocess import (PIPE, CalledProcessError, Popen, check_call,
@@ -363,6 +363,8 @@ def main():
         warnings.showwarning = lambda *args: _warn_(args[0].message)
 
         parser = ArgumentParser()
+        parser.add_argument(
+            '-d', '--debug', action='store_true', help=SUPPRESS)
         subparsers = parser.add_subparsers()
 
         create_parser = subparsers.add_parser('create')
@@ -424,12 +426,17 @@ def main():
             '--state', choices=['all', 'open', 'closed'])
 
         args = vars(parser.parse_args())
+        debug = args.pop('debug')
         command = args.pop('_command_')
         command(get_service(), **args)
     except GitIssueError as error:
-        print(
-            '%serror:%s %s' % (Fore.RED, Fore.RESET, error.message),
-            file=stderr)
+        if debug:
+            from sys import exc_info
+            from traceback import print_exception
+            exc_type, exc_value, exc_traceback = exc_info()
+            print_exception(exc_type, exc_value, exc_traceback)
+            exit(1)
+        _error_(error.message)
     except KeyboardInterrupt:
         exit(130)
 
