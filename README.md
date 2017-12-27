@@ -156,12 +156,14 @@ activities occurring in your absence.
 
 ## BUGS
 
-* `Gogs` does not support editing _labels_, a warning will be omitted if this is
-  attempted.
+* `Gogs` does not reliably support repeatedly editing _labels_, a warning will
+  be omitted if this is attempted.
 
 Please report any issues on [GitHub][issues].
 
 ## HISTORY
+
+0.2.5 - Add support for editing Gogs issue labels.
 
 0.2.4 - Respect `issue.<service>.url` when set.
 

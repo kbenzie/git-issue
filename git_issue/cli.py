@@ -338,10 +338,7 @@ def complete(service, **kwargs):
     complete_type = kwargs.pop('type')
     if complete_type == 'issues':
         state = kwargs.pop('state', 'open')
-        if state == 'all':
-            issues = service.issues('open') + service.issues('closed')
-        else:
-            issues = service.issues(state)
+        issues = service.issues(state)
         if 'zsh' in environ['SHELL']:
             # In zsh display the issue title as the description
             output = '\n'.join(['%r:%s' % (issue.number, issue.title)

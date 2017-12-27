@@ -10,7 +10,7 @@ from git_issue.service import (Issue, IssueComment, IssueEvent, IssueNumber,
                                Label, Milestone, Service, User,
                                get_repo_owner_name, get_resource, get_token)
 from past.builtins import basestring
-from requests import get, patch, post
+from requests import get, patch, post, put
 
 
 def _check_assignee_(assignee):
@@ -162,6 +162,7 @@ class GogsIssue(Issue):
             if issue['milestone'] else None,
             num_comments=issue['comments'])
         self.issues_url = '%s/issues' % repos_url
+        self.issue_url = '%s/%r' % (self.issues_url, self.number)
         self.header = header
         self.cache = {}
 
@@ -234,8 +235,6 @@ class GogsIssue(Issue):
         # labels (array of int) Labels ID to associate with this issue.
         labels = _check_labels_(kwargs.pop('labels', []))
         if len(labels) > 0:
-            # TODO: Update this if/when Gogs adds support for editing labels.
-            warn('Gogs does not support editing labels, attepmting anyway')
             data['labels'] = [label.id for label in labels]
         # milestone (int) The ID of the milestone to associate this issue with.
         milestone = _check_milestone_(kwargs.pop('milestone', None))
@@ -243,6 +242,16 @@ class GogsIssue(Issue):
             data['milestone'] = milestone.id
         if len(data) == 0:
             raise GitIssueError('aborted update due to no changes')
+        if 'labels' in data:
+            # NOTE: Work around for Gogs not supporting editing of labels using
+            # the edit issue API, instead use the explicit issue labels API.
+            warn('Gogs does not reliably support repeatedly editing labels '
+                 'and may fail')
+            response = put('%s/labels' % self.issue_url,
+                           headers=self.header,
+                           json={'labels': data.pop('labels')})
+            if response.status_code != 200:
+                raise GitIssueError(response.reason)
         response = patch(
             '%s/%r' % (self.issues_url, self.number),
             headers=self.header,
