@@ -10,7 +10,7 @@ from git_issue.service import (Issue, IssueComment, IssueEvent, IssueNumber,
                                Label, Milestone, Service, User,
                                get_repo_owner_name, get_resource, get_token)
 from past.builtins import basestring
-from requests import get, patch, post, put
+from requests import delete, get, patch, post, put
 
 
 def _check_assignee_(assignee):
@@ -43,6 +43,7 @@ class Gogs(Service):
 
     def __init__(self):
         super().__init__()
+        # TODO: This should not assume https.
         self.url = 'https://%s' % get_resource('Gogs')
         self.api_url = '%s/api/v1' % self.url
         self.repos_url = '%s/repos/%s' % (self.api_url,
@@ -73,7 +74,7 @@ class Gogs(Service):
         response = post(
             '%s/issues' % self.repos_url, json=data, headers=self.header)
         if response.status_code == 201:
-            return response.json()
+            return GogsIssue(response.json(), self.repos_url, self.header)
         else:
             raise GitIssueError(response.reason)
 
@@ -161,7 +162,8 @@ class GogsIssue(Issue):
             milestone=GogsMilestone(issue['milestone'])
             if issue['milestone'] else None,
             num_comments=issue['comments'])
-        self.issues_url = '%s/issues' % repos_url
+        self.repos_url = repos_url
+        self.issues_url = '%s/issues' % self.repos_url
         self.issue_url = '%s/%r' % (self.issues_url, self.number)
         self.header = header
         self.cache = {}
@@ -172,7 +174,7 @@ class GogsIssue(Issue):
             headers=self.header,
             json={'body': body})
         if response.status_code == 201:
-            return response.json()
+            return GogsIssueComment(response.json(), self.number)
         else:
             raise GitIssueError(response.reason)
 
@@ -192,7 +194,7 @@ class GogsIssue(Issue):
         comments = []
         for comment in self.cache['comments']:
             if len(comment['body']) > 0:
-                comments.append(GogsIssueComment(comment))
+                comments.append(GogsIssueComment(comment, self.number))
         return comments
 
     def events(self):
@@ -202,10 +204,10 @@ class GogsIssue(Issue):
             self._comments_()
         # NOTE: Gogs issues can begin in a closed state so to correctly
         # determine the state change for each action we must work from issues
-        # current state and rely on the reverse order of the served comments.
+        # current state.
         state = self.state
         events = []
-        for event in self.cache['comments']:
+        for event in reversed(sorted(self.cache['comments'])):
             if len(event['body']) == 0:
                 events.append(
                     GogsIssueEvent({'open': 'reopened',
@@ -235,7 +237,9 @@ class GogsIssue(Issue):
         # labels (array of int) Labels ID to associate with this issue.
         labels = _check_labels_(kwargs.pop('labels', []))
         if len(labels) > 0:
-            data['labels'] = [label.id for label in labels]
+            data['labels'] = []
+            if 'none' not in labels:
+                data['labels'] = [label.id for label in labels]
         # milestone (int) The ID of the milestone to associate this issue with.
         milestone = _check_milestone_(kwargs.pop('milestone', None))
         if milestone:
@@ -247,9 +251,16 @@ class GogsIssue(Issue):
             # the edit issue API, instead use the explicit issue labels API.
             warn('Gogs does not reliably support repeatedly editing labels '
                  'and may fail')
-            response = put('%s/labels' % self.issue_url,
-                           headers=self.header,
-                           json={'labels': data.pop('labels')})
+            labels = data.pop('labels')
+            if len(labels) == 0:
+                # "none" was found in labels, delete all labels for the issue.
+                response = delete(
+                    '%s/labels' % self.issue_url, headers=self.header)
+            else:
+                # Replace all labels.
+                response = put('%s/labels' % self.issue_url,
+                               headers=self.header,
+                               json={'labels': data.pop('labels')})
             if response.status_code != 200:
                 raise GitIssueError(response.reason)
         response = patch(
@@ -257,7 +268,7 @@ class GogsIssue(Issue):
             headers=self.header,
             json=data)
         if response.status_code == 201:
-            return response.json()
+            return GogsIssue(response.json(), self.repos_url, self.header)
         else:
             raise GitIssueError(response.reason)
 
@@ -272,7 +283,7 @@ class GogsIssue(Issue):
             headers=self.header,
             json={'state': 'closed'})
         if response.status_code == 201:
-            return response.json()
+            return GogsIssue(response.json(), self.repos_url, self.header)
         else:
             raise GitIssueError(response.reason)
 
@@ -282,13 +293,14 @@ class GogsIssue(Issue):
             headers=self.header,
             json={'state': 'open'})
         if response.status_code == 201:
-            return response.json()
+            return GogsIssue(response.json(), self.repos_url, self.header)
         else:
             raise GitIssueError(response.reason)
 
     def url(self):
-        return '%s/%s/issues/%r' % (self.url, get_repo_owner_name('Gogs'),
-                                    self.number)
+        # TODO: This should not assume https.
+        return 'https://%s/%s/issues/%r' % (
+            get_resource('Gogs'), get_repo_owner_name('Gogs'), self.number)
 
 
 class GogsIssueNumber(IssueNumber):
@@ -309,9 +321,17 @@ class GogsIssueNumber(IssueNumber):
 class GogsIssueComment(IssueComment):
     """Gogs IssueComment implementation."""
 
-    def __init__(self, comment):
+    def __init__(self, comment, issue_number):
         super().__init__(comment['body'], GogsUser(comment['user']),
                          comment['created_at'])
+        self.issue_number = issue_number
+        self.id = comment['id']
+
+    def url(self):
+        # TODO: This should not assume https.
+        return 'https://%s/%s/issues/%r/#issuecomment-%s' % (
+            get_resource('Gogs'), get_repo_owner_name('Gogs'),
+            self.issue_number, self.id)
 
 
 class GogsIssueEvent(IssueEvent):

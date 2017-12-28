@@ -32,9 +32,8 @@ def get_remote(name):
 
 def _check_service_url_(name, url):
     if not url.endswith('.git'):
-        raise GitIssueError(
-            'invalid issue.%s.url expected ".git" suffix: %s' %
-            (name, url))
+        raise GitIssueError('invalid issue.%s.url expected ".git" suffix: %s' %
+                            (name, url))
 
 
 def get_resource(name):
@@ -317,11 +316,13 @@ class Issue(with_metaclass(ABCMeta)):
             :title: Title of the issue.
             :body: Detailed description of the issue.
             :assignee: ``User`` to assign the issue to.
-            :labels: A ``list`` of ``Label``'s to assign to the issue.
-            :milestone: ``Milestone`` to assign to the issue.
+            :labels: A ``list`` of ``Label``'s to assign to the issue,
+            ``"none"`` is a special value to remove all labels from the issue.
+            :milestone: ``Milestone`` to assign to the issue, ``"none"`` is a
+            special value to remove the milestone from the issue.
 
         Returns:
-            :str: URL of the updated issue.
+            :Issue: The updated issue.
 
         Raises:
             :GitIssueError: Containing message about the error.
@@ -399,6 +400,11 @@ class IssueComment(with_metaclass(ABCMeta)):
 
     def __lt__(self, other):
         return self.created < other.created
+
+    @abstractmethod
+    def url(self):
+        """Get comment HTTP URL."""
+        raise NotImplementedError
 
 
 class IssueEvent(with_metaclass(ABCMeta)):

@@ -77,7 +77,7 @@ class GitHub(Service):
         response = post(
             self.issues_url, auth=self.auth, headers=self.headers, json=data)
         if response.status_code == 201:
-            return response.json()
+            return GitHubIssue(response.json(), self.auth, self.headers)
         else:
             raise GitIssueError(response.reason)
 
@@ -171,7 +171,7 @@ class GitHubIssue(Issue):
             headers=self.headers,
             json={'body': body})
         if response.status_code == 201:
-            return response.json()
+            return GitHubIssueComment(response.json())
         else:
             raise GitIssueError(response.reason)
 
@@ -230,7 +230,7 @@ class GitHubIssue(Issue):
         response = patch(
             self.issue_url, auth=self.auth, headers=self.headers, json=data)
         if response.status_code == 200:
-            return response.json()
+            return GitHubIssue(response.json(), self.auth, self.headers)
         else:
             raise GitIssueError(response.reason)
 
@@ -246,7 +246,7 @@ class GitHubIssue(Issue):
             headers=self.headers,
             json={'state': 'closed'})
         if response.status_code == 200:
-            return response.json()
+            return GitHubIssue(response.json(), self.auth, self.headers)
         else:
             raise GitIssueError(response.reason)
 
@@ -257,7 +257,7 @@ class GitHubIssue(Issue):
             headers=self.headers,
             json={'state': 'open'})
         if response.status_code == 200:
-            return response.json()
+            return GitHubIssue(response.json(), self.auth, self.headers)
         else:
             raise GitIssueError(response.reason)
 
@@ -346,3 +346,7 @@ class GitHubIssueComment(IssueComment):
     def __init__(self, comment):
         super().__init__(comment['body'], GitHubUser(comment['user']),
                          comment['created_at'])
+        self.html_url = comment['html_url']
+
+    def url(self):
+        return self.html_url

@@ -204,6 +204,22 @@ def _issue_summary_(issue, num_comments=0):
     return output
 
 
+def _finish_(action, number, url):
+    print('%(color)s%(action)s%(reset)s issue %(number)s: %(url)s' %
+          {'color': {
+              'Created': Fore.GREEN,
+              'Edited': Fore.YELLOW,
+              'Commented on': Fore.RESET,
+              'Closed': Fore.RED,
+              'Reopened': Fore.GREEN,
+          }[action],
+           'action': action,
+           'reset': Fore.RESET,
+           'number': number,
+           'url': url})
+    exit(0)
+
+
 def create(service, **kwargs):
     """Create a new issue."""
     assignee = _pick_user_(service, kwargs.pop('assignee', None))
@@ -223,8 +239,9 @@ def create(service, **kwargs):
     body = '\n'.join(message[1:]) if len(message) > 1 else ''
     if len(title.strip()) == 0 and len(body.strip()) == 0:
         raise GitIssueError('aborting due to empty message')
-    service.create(
+    issue = service.create(
         title, body, assignee=assignee, labels=labels, milestone=milestone)
+    _finish_('Created', issue.number, issue.url())
 
 
 def edit(service, **kwargs):
@@ -254,6 +271,7 @@ def edit(service, **kwargs):
         assignee=assignee,
         labels=labels,
         milestone=milestone)
+    _finish_('Edited', issue.number, issue.url)
 
 
 def comment(service, **kwargs):
@@ -265,7 +283,8 @@ def comment(service, **kwargs):
         body = '\n'.join(_editor_())
     if len(body.strip()) == 0:
         raise GitIssueError('aborted due to empty message')
-    issue.comment(body)
+    comment = issue.comment(body)
+    _finish_('Commented on', '%s' % issue.number, comment.url())
 
 
 def close(service, **kwargs):
@@ -279,9 +298,10 @@ def close(service, **kwargs):
             comment = kwargs.pop('message')
         else:
             comment = '\n'.join(_editor_())
-    if len(comment.strip()) == 0:
-        raise GitIssueError('aborted due to empty message')
-    issue.close(comment=comment)
+        if len(comment.strip()) == 0:
+            raise GitIssueError('aborted due to empty message')
+    issue = issue.close(comment=comment)
+    _finish_('Closed', issue.number, issue.url())
 
 
 def reopen(service, **kwargs):
@@ -289,7 +309,8 @@ def reopen(service, **kwargs):
     issue = service.issue(kwargs.pop('number'))
     if issue.state != 'closed':
         raise GitIssueError('issue %s is not closed' % issue.number)
-    issue.reopen()
+    issue = issue.reopen()
+    _finish_('Reopened', issue.number, issue.url())
 
 
 def show(service, **kwargs):
@@ -319,6 +340,7 @@ def show(service, **kwargs):
                     'Date:     %s' % _human_date_(item.created),
                 ]
     _pager_('\n'.join(output))
+    exit(0)
 
 
 def list(service, **kwargs):
@@ -340,6 +362,7 @@ def list(service, **kwargs):
             output += _issue_summary_(issue, issue.num_comments)
             output.append('')
     _pager_('\n'.join(output))
+    exit(0)
 
 
 def browse(service, **kwargs):
@@ -349,6 +372,7 @@ def browse(service, **kwargs):
         print(issue.url())
     else:
         open_new_tab(issue.url())
+    exit(0)
 
 
 def complete(service, **kwargs):
@@ -370,6 +394,7 @@ def complete(service, **kwargs):
         output = '\n'.join(
             [milestone.title for milestone in service.milestones()])
     print(output, end='')
+    exit(0)
 
 
 def main():
