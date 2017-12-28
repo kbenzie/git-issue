@@ -74,12 +74,14 @@ _git-issue() {
 
         (show)
           _arguments -S \
+            '--summary[print issue summary only]' \
             '1: :(( "${(@f)$(git-issue complete issues --state all)}" ))' \
             && ret=0
           ;;
 
         (list)
           _arguments -S \
+            '--oneline[print each issue on one line]' \
             '1: :(open closed all)' \
             && ret=0
           ;;

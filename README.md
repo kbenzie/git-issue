@@ -68,6 +68,10 @@ queries `issue.<service>.token` to gain access to the _service_.
   configured service.
 * _open_, _closed_, _all_:
   The current state of issues to list, if the default is _open_.
+* `--summary`:
+  Print issue summary only, only available for `git issue show`.
+* `--oneline`:
+  Print each issue on one line, only available for `git issue list`.
 
 ## SERVICES
 
@@ -162,6 +166,8 @@ activities occurring in your absence.
 Please report any issues on [GitHub][issues].
 
 ## HISTORY
+
+0.2.6 - Add options for concise output.
 
 0.2.5 - Add support for editing Gogs issue labels.
 

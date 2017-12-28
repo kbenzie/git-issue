@@ -164,10 +164,7 @@ def _human_date_(date):
     return date.format('ddd MMM DD HH:mm:ss YYYY ZZ')
 
 
-def _issue_summary_(issue):
-    title = '%(yellow)s%(number)s %(title)s' % {'yellow': Fore.YELLOW,
-                                                'number': issue.number,
-                                                'title': issue.title}
+def _issue_state_(issue):
     state = '%(color)s%(state)s%(yellow)s' % {
         'color': _state_color_(issue.state),
         'state': issue.state,
@@ -181,9 +178,16 @@ def _issue_summary_(issue):
                                   'label': label.name,
                                   'yellow': Fore.YELLOW}
                                  for label in issue.labels])
+    return state
+
+
+def _issue_summary_(issue, num_comments=0):
+    title = '%(yellow)s%(number)s %(title)s' % {'yellow': Fore.YELLOW,
+                                                'number': issue.number,
+                                                'title': issue.title}
     output = [
         '%(title)s (%(state)s)%(reset)s' % {'title': title,
-                                            'state': state,
+                                            'state': _issue_state_(issue),
                                             'reset': Fore.RESET},
         'Author:   %s' % issue.author,
     ]
@@ -193,6 +197,10 @@ def _issue_summary_(issue):
     if len(issue.body) > 0:
         output.append('')
         output += ['    %s' % line for line in issue.body.splitlines()]
+    if num_comments > 0:
+        output.append('')
+        output.append('%s comment%s' % (num_comments, 's'
+                                        if num_comments > 1 else ''))
     return output
 
 
@@ -287,40 +295,50 @@ def reopen(service, **kwargs):
 def show(service, **kwargs):
     """Show detail of a single issue."""
     issue = service.issue(kwargs.pop('number'))
-    output = _issue_summary_(issue)
-    for item in sorted(issue.comments() + issue.events()):
-        if isinstance(item, IssueComment):
-            output += [
-                '',
-                'Comment:  %s' % item.author,
-                'Date:     %s' % _human_date_(item.created),
-                '',
-            ]
-            output += ['    %s' % line for line in item.body.splitlines()]
-        elif isinstance(item, IssueEvent):
-            output += [
-                '',
-                '%(color)s%(state)s%(reset)s%(user)s' % {
-                    'color': _state_color_(item.event),
-                    'state': ('%s:' % item.event.capitalize()).ljust(10),
-                    'reset': Fore.RESET,
-                    'user': item.actor,
-                },
-                'Date:     %s' % _human_date_(item.created),
-            ]
+    summary = kwargs.pop('summary')
+    output = _issue_summary_(issue, issue.num_comments if summary else 0)
+    if not summary:
+        for item in sorted(issue.comments() + issue.events()):
+            if isinstance(item, IssueComment):
+                output += [
+                    '',
+                    'Comment:  %s' % item.author,
+                    'Date:     %s' % _human_date_(item.created),
+                    '',
+                ]
+                output += ['    %s' % line for line in item.body.splitlines()]
+            elif isinstance(item, IssueEvent):
+                output += [
+                    '',
+                    '%(color)s%(state)s%(reset)s%(user)s' % {
+                        'color': _state_color_(item.event),
+                        'state': ('%s:' % item.event.capitalize()).ljust(10),
+                        'reset': Fore.RESET,
+                        'user': item.actor,
+                    },
+                    'Date:     %s' % _human_date_(item.created),
+                ]
     _pager_('\n'.join(output))
 
 
 def list(service, **kwargs):
     """List existing issues."""
     output = []
-    for issue in service.issues(kwargs.pop('state')):
-        output += _issue_summary_(issue)
-        if issue.num_comments > 0:
+    issues = service.issues(kwargs.pop('state'))
+    if kwargs.pop('oneline'):
+        for issue in issues:
+            output.append(
+                '%(yellow)s%(number)s (%(state)s)%(reset)s %(title)s' % {
+                    'yellow': Fore.YELLOW,
+                    'number': issue.number,
+                    'state': _issue_state_(issue),
+                    'reset': Fore.RESET,
+                    'title': issue.title,
+                })
+    else:
+        for issue in issues:
+            output += _issue_summary_(issue, issue.num_comments)
             output.append('')
-            output.append('%s comment%s' % (issue.num_comments, 's'
-                                            if issue.num_comments > 1 else ''))
-        output.append('')
     _pager_('\n'.join(output))
 
 
@@ -400,10 +418,12 @@ def main():
 
         show_parser = subparsers.add_parser('show')
         show_parser.set_defaults(_command_=show)
+        show_parser.add_argument('--summary', action='store_true')
         show_parser.add_argument('number')
 
         list_parser = subparsers.add_parser('list')
         list_parser.set_defaults(_command_=list)
+        list_parser.add_argument('--oneline', action='store_true')
         list_parser.add_argument(
             'state',
             choices=['open', 'closed', 'all'],
