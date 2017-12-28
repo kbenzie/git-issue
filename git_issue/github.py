@@ -4,6 +4,7 @@ from __future__ import print_function
 
 from builtins import super
 
+from arrow import utcnow
 from git_issue import GitIssueError
 from git_issue.service import (Issue, IssueComment, IssueEvent, IssueNumber,
                                Label, Milestone, Service, User,
@@ -124,19 +125,21 @@ class GitHub(Service):
                        auth=self.auth,
                        headers=self.headers)
         if response.status_code == 200:
-            return [GitHubLabel(label) for label in response.json()]
+            labels = [GitHubLabel(label) for label in response.json()]
         else:
             raise GitIssueError(response.reason)
+        return labels
 
     def milestones(self):
         response = get('%s/milestones' % self.repos_url,
                        auth=self.auth,
                        headers=self.headers)
         if response.status_code == 200:
-            return [GitHubMilestone(milestones)
-                    for milestones in response.json()]
+            milestones = [GitHubMilestone(milestones)
+                          for milestones in response.json()]
         else:
             raise GitIssueError(response.reason)
+        return milestones
 
 
 class GitHubIssue(Issue):
@@ -220,11 +223,15 @@ class GitHubIssue(Issue):
         # issue with.
         milestone = _check_milestone_(kwargs.pop('milestone', None))
         if milestone:
-            data['milestone'] = milestone.number
+            data['milestone'] = None
+            if 'none' != milestone.title:
+                data['milestone'] = milestone.number
         # labels (array of strings) Labels to associate with this issue.
         labels = _check_labels_(kwargs.pop('labels', []))
         if len(labels) > 0:
-            data['labels'] = [label.name for label in labels]
+            data['labels'] = []
+            if not any([label.name == 'none' for label in labels]):
+                data['labels'] = [label.name for label in labels]
         if len(data) == 0:
             raise GitIssueError('aborted update due to no changes')
         response = patch(
@@ -313,7 +320,9 @@ class GitHubUser(User):
 class GitHubLabel(Label):
     """GitHub Label implementation."""
 
-    def __init__(self, label):
+    def __init__(self, label=None):
+        if not label:
+            label = {'name': 'none', 'color': 'ffffff', 'id': 0}
         super().__init__(label['name'], label['color'])
         self.id = label['id']
 
@@ -327,7 +336,16 @@ class GitHubLabel(Label):
 class GitHubMilestone(Milestone):
     """GitHub Milestone implementation."""
 
-    def __init__(self, milestone):
+    def __init__(self, milestone=None):
+        if not milestone:
+            milestone = {
+                'title': 'none',
+                'description': '',
+                'due_on': '%s' % utcnow(),
+                'state': 'closed',
+                'number': 0,
+                'id': 0,
+            }
         super().__init__(milestone['title'], milestone['description'],
                          milestone['due_on'], milestone['state'])
         self.number = milestone['number']

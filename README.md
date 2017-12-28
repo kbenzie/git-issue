@@ -59,10 +59,11 @@ queries `issue.<service>.token` to gain access to the _service_.
 * `-a` _assignee_, `--assignee` _assignee_:
   Search term for a user to assign the issue to.
 * `-s` _milestone_, `--milestone` _milestone_:
-  Name of the _milestone_ to assign to the issue.
+  Name of the _milestone_ to assign to the issue or _none_ to remove existing
+  milestone.
 * `-l` _label_, `--label` _label_:
   Name of a _label_ to assign to the issue, can be repeated to assign multiple
-  _label_'s to the issue.
+  _label_'s to the issue or _none_ to remove existing labels.
 * _number_:
   The issue number to manage, the actual representation may change dependant on
   configured service.
@@ -166,6 +167,8 @@ activities occurring in your absence.
 Please report any issues on [GitHub][issues].
 
 ## HISTORY
+
+0.2.8 - Enable removal of labels/milestone.
 
 0.2.7 - Display message on command success.
 

@@ -90,11 +90,11 @@ Search term for a user to assign the issue to\.
 .
 .TP
 \fB\-s\fR \fImilestone\fR, \fB\-\-milestone\fR \fImilestone\fR
-Name of the \fImilestone\fR to assign to the issue\.
+Name of the \fImilestone\fR to assign to the issue or \fInone\fR to remove existing milestone\.
 .
 .TP
 \fB\-l\fR \fIlabel\fR, \fB\-\-label\fR \fIlabel\fR
-Name of a \fIlabel\fR to assign to the issue, can be repeated to assign multiple \fIlabel\fR\'s to the issue\.
+Name of a \fIlabel\fR to assign to the issue, can be repeated to assign multiple \fIlabel\fR\'s to the issue or \fInone\fR to remove existing labels\.
 .
 .TP
 \fInumber\fR
@@ -193,6 +193,9 @@ Any other error codes are propagated from the underlying command, i\.e\. git\-co
 Please report any issues on GitHub \fIhttps://github\.com/kbenzie/git\-issue/issues\fR\.
 .
 .SH "HISTORY"
+0\.2\.8 \- Enable removal of labels/milestone\.
+.
+.P
 0\.2\.7 \- Display message on command success\.
 .
 .P

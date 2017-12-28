@@ -103,7 +103,10 @@ def _pick_user_(service, keyword):
 def _check_labels_(service, labels):
     checked = []
     if labels:
-        service_labels = {label.name: label for label in service.labels()}
+        service_labels = service.labels()
+        if any([label == 'none' for label in labels]):
+            return [type(service_labels[0])()]
+        service_labels = {label.name: label for label in service_labels}
         for label in labels:
             if label not in service_labels:
                 raise GitIssueError('invalid label name: %s' % label)
@@ -112,13 +115,14 @@ def _check_labels_(service, labels):
 
 
 def _check_milestone_(service, milestone):
-    checked = None
     if milestone:
+        service_milestones = service.milestones()
+        if milestone == 'none':
+            return type(service_milestones[0])()
         service_milestones = {milestone.title: milestone
-                              for milestone in service.milestones()}
+                              for milestone in service_milestones}
         if milestone in service_milestones:
-            checked = service_milestones[milestone]
-    return checked
+            return service_milestones[milestone]
 
 
 def _editor_(template='\n'):
@@ -271,7 +275,7 @@ def edit(service, **kwargs):
         assignee=assignee,
         labels=labels,
         milestone=milestone)
-    _finish_('Edited', issue.number, issue.url)
+    _finish_('Edited', issue.number, issue.url())
 
 
 def comment(service, **kwargs):

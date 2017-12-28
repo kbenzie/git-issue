@@ -137,9 +137,10 @@ using <a class="man-ref" href="https://linux.die.net/man/1/less">less<span class
 a message, is mutually exclusive with <code>-n</code>.</dd>
 <dt><code>-n</code>, <code>--no-message</code></dt><dd>Do not open the editor to edit a message, is mutually exclusive with <code>-m</code>.</dd>
 <dt><code>-a</code> <em>assignee</em>, <code>--assignee</code> <em>assignee</em></dt><dd>Search term for a user to assign the issue to.</dd>
-<dt><code>-s</code> <em>milestone</em>, <code>--milestone</code> <em>milestone</em></dt><dd>Name of the <em>milestone</em> to assign to the issue.</dd>
+<dt><code>-s</code> <em>milestone</em>, <code>--milestone</code> <em>milestone</em></dt><dd>Name of the <em>milestone</em> to assign to the issue or <em>none</em> to remove existing
+milestone.</dd>
 <dt><code>-l</code> <em>label</em>, <code>--label</code> <em>label</em></dt><dd>Name of a <em>label</em> to assign to the issue, can be repeated to assign multiple
-<em>label</em>'s to the issue.</dd>
+<em>label</em>'s to the issue or <em>none</em> to remove existing labels.</dd>
 <dt class="flush"><em>number</em></dt><dd>The issue number to manage, the actual representation may change dependant on
 configured service.</dd>
 <dt><em>open</em>, <em>closed</em>, <em>all</em></dt><dd>The current state of issues to list, if the default is <em>open</em>.</dd>
@@ -242,6 +243,8 @@ be emitted if this is attempted.</li>
 <p>Please report any issues on <a href="https://github.com/kbenzie/git-issue/issues">GitHub</a>.</p>
 
 <h2 id="HISTORY">HISTORY</h2>
+
+<p>0.2.8 - Enable removal of labels/milestone.</p>
 
 <p>0.2.7 - Display message on command success.</p>
 

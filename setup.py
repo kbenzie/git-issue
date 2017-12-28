@@ -13,7 +13,7 @@ if system() != 'Windows':
 
 setup(
     name='git_issue',
-    version='0.2.7',
+    version='0.2.8',
     description='Manage remote Git issue trackers',
     url='https://code.infektor.net/benie/git-issue',
     author='Kenneth Benzie',

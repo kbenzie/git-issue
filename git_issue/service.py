@@ -492,7 +492,7 @@ class Milestone(with_metaclass(ABCMeta)):
         if not isinstance(description, basestring):
             raise ValueError('description must be a string')
         self.description = description
-        if not isinstance(due, basestring):
+        if due and not isinstance(due, basestring):
             raise ValueError('due must be a UTC encoded date string')
         self.due = due
         if not isinstance(state,

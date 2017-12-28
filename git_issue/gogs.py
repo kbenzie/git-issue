@@ -5,6 +5,7 @@ from __future__ import print_function
 from builtins import super
 from warnings import warn
 
+from arrow import utcnow
 from git_issue import GitIssueError
 from git_issue.service import (Issue, IssueComment, IssueEvent, IssueNumber,
                                Label, Milestone, Service, User,
@@ -234,16 +235,16 @@ class GogsIssue(Issue):
         assignee = _check_assignee_(kwargs.pop('assignee', None))
         if assignee:
             data['assignee'] = assignee.username
-        # labels (array of int) Labels ID to associate with this issue.
-        labels = _check_labels_(kwargs.pop('labels', []))
-        if len(labels) > 0:
-            data['labels'] = []
-            if 'none' not in labels:
-                data['labels'] = [label.id for label in labels]
         # milestone (int) The ID of the milestone to associate this issue with.
         milestone = _check_milestone_(kwargs.pop('milestone', None))
         if milestone:
             data['milestone'] = milestone.id
+        # labels (array of int) Labels ID to associate with this issue.
+        labels = _check_labels_(kwargs.pop('labels', []))
+        if len(labels) > 0:
+            data['labels'] = []
+            if not any([label.name == 'none' for label in labels]):
+                data['labels'] = [label.id for label in labels]
         if len(data) == 0:
             raise GitIssueError('aborted update due to no changes')
         if 'labels' in data:
@@ -256,13 +257,15 @@ class GogsIssue(Issue):
                 # "none" was found in labels, delete all labels for the issue.
                 response = delete(
                     '%s/labels' % self.issue_url, headers=self.header)
+                if response.status_code != 204:
+                    raise GitIssueError(response.reason)
             else:
                 # Replace all labels.
                 response = put('%s/labels' % self.issue_url,
                                headers=self.header,
                                json={'labels': data.pop('labels')})
-            if response.status_code != 200:
-                raise GitIssueError(response.reason)
+                if response.status_code != 200:
+                    raise GitIssueError(response.reason)
         response = patch(
             '%s/%r' % (self.issues_url, self.number),
             headers=self.header,
@@ -358,7 +361,9 @@ class GogsUser(User):
 class GogsLabel(Label):
     """Gogs Label implementation."""
 
-    def __init__(self, label):
+    def __init__(self, label=None):
+        if not label:
+            label = {'name': 'none', 'color': 'ffffff', 'id': 0}
         super().__init__(label['name'], label['color'])
         self.id = label['id']
 
@@ -372,7 +377,13 @@ class GogsLabel(Label):
 class GogsMilestone(Milestone):
     """Gogs Milestone implementation."""
 
-    def __init__(self, milestone):
+    def __init__(self, milestone=None):
+        if not milestone:
+            milestone = {'title': 'none',
+                         'description': '',
+                         'due_on': '%s' % utcnow(),
+                         'state': 'closed',
+                         'id': 0}
         super().__init__(milestone['title'], milestone['description'],
                          milestone['due_on'], milestone['state'])
         self.id = milestone['id']
