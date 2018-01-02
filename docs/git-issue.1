@@ -28,10 +28,10 @@
 \fBgit issue browse\fR [\fB\-u\fR] \fInumber\fR
 .
 .br
-\fBgit issue list\fR [{\fIopen\fR,\fIclosed\fR,\fIall\fR}]
+\fBgit issue list\fR [\fB\-\-oneline\fR] [{\fIopen\fR,\fIclosed\fR,\fIall\fR}]
 .
 .br
-\fBgit issue show\fR \fInumber\fR
+\fBgit issue show\fR [\fB\-\-summary\fR] \fInumber\fR
 .
 .SH "DESCRIPTION"
 \fBgit\-issue\fR provides a command line interface to remote issue trackers allowing users to manage issues in the same way they manage git(1) repositories\. A remote issue tracker is referred to as \fIservice\fR\. Multiple \fIservice\fR providers can be supported by \fBgit\-issue\fR, see \fISERVICES\fR for the supported \fIservice\fR list\. \fBgit\-issue\fR determines which \fIservice\fR to use by querying \fBissue\.service\fR\. Authentication with the \fIservice\fR is performed using an API token, \fBgit\-issue\fR queries \fBissue\.<service>\.token\fR to gain access to the \fIservice\fR\.

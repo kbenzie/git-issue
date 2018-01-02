@@ -10,8 +10,8 @@ git-issue(1) -- Manage remote Git issue trackers
 `git issue reopen` _number_  
 `git issue comment` \[`-m`\] _number_  
 `git issue browse` \[`-u`\] _number_  
-`git issue list` \[{_open_,_closed_,_all_}\]  
-`git issue show` _number_  
+`git issue list` \[`--oneline`\] \[{_open_,_closed_,_all_}\]  
+`git issue show` \[`--summary`\] _number_  
 
 ## DESCRIPTION
 
