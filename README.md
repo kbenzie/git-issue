@@ -80,6 +80,10 @@ queries `issue.<service>.token` to gain access to the _service_.
   To enable this service set `issue.service` to `GitHub` and
   `issue.GitHub.token` to `<username>`_:_`<token>` replacing `<username>` with
   your GitHub login and `<token>` with a [personal access token][github-token].
+* `GitLab`:
+  To enable this service set `issue.service` to `GitLab` and
+  `issue.GitLab.token` to `<token>` created at
+  `https://your.gitlab.url/profile/account`.
 * `Gogs`:
   To enable this service set `issue.service` to `Gogs` and `issue.Gogs.token` to
   `<token>` created at `https://your.gogs.url/user/settings/applications`.
@@ -167,6 +171,8 @@ activities occurring in your absence.
 Please report any issues on [GitHub][issues].
 
 ## HISTORY
+
+0.3.0 - Support `GitLab` service.
 
 0.2.8 - Enable removal of labels/milestone.
 

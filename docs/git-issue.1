@@ -119,6 +119,10 @@ Print each issue on one line, only available for \fBgit issue list\fR\.
 To enable this service set \fBissue\.service\fR to \fBGitHub\fR and \fBissue\.GitHub\.token\fR to \fB<username>\fR\fI:\fR\fB<token>\fR replacing \fB<username>\fR with your GitHub login and \fB<token>\fR with a personal access token \fIhttps://github\.com/settings/tokens\fR\.
 .
 .TP
+\fBGitLab\fR
+To enable this service set \fBissue\.service\fR to \fBGitLab\fR and \fBissue\.GitLab\.token\fR to \fB<token>\fR created at \fBhttps://your\.gitlab\.url/profile/account\fR\.
+.
+.TP
 \fBGogs\fR
 To enable this service set \fBissue\.service\fR to \fBGogs\fR and \fBissue\.Gogs\.token\fR to \fB<token>\fR created at \fBhttps://your\.gogs\.url/user/settings/applications\fR\.
 .
@@ -193,6 +197,9 @@ Any other error codes are propagated from the underlying command, i\.e\. git\-co
 Please report any issues on GitHub \fIhttps://github\.com/kbenzie/git\-issue/issues\fR\.
 .
 .SH "HISTORY"
+0\.3\.0 \- Support \fBGitLab\fR service\.
+.
+.P
 0\.2\.8 \- Enable removal of labels/milestone\.
 .
 .P

@@ -14,6 +14,39 @@ from giturlparse import parse
 from past.builtins import basestring
 
 
+def get_protocol(name):
+    """Get the service URL protocol.
+
+    Inspects the value of ``issue.<service>.https`` for ``0`` or ``false``
+    to assertain the URL schema to use, defaults to ``'https://'`` if the
+    config setting is not found, ``'http://'`` is returned otherwise.
+
+    Arguments:
+        :name: Name of the service.
+
+    Returns:
+        :str: ``'https://'`` or ``'http://'`` depending on the value of
+            ``issue.<service>.https`` config setting.
+    """
+    with open(devnull, 'w+b') as DEVNULL:
+        try:
+            url = check_output(
+                ['git', 'config', '--get', 'issue.%s.url' % name],
+                stderr=DEVNULL).strip()
+            _check_service_url_(name, url)
+            return parse(url).protocol
+        except CalledProcessError:
+            try:
+                use_https = check_output(
+                    ['git', 'config', '--get', 'issue.%s.https' % name],
+                    stderr=DEVNULL).strip().lower()
+                if use_https == '0' or use_https == 'false':
+                    return 'http://'
+            except CalledProcessError:
+                pass
+    return 'https://'
+
+
 def get_remote(name):
     """Get the Git remote, default to ``'origin'``.
 

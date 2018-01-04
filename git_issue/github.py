@@ -80,7 +80,7 @@ class GitHub(Service):
         if response.status_code == 201:
             return GitHubIssue(response.json(), self.auth, self.headers)
         else:
-            raise GitIssueError(response.reason)
+            raise GitIssueError(response)
 
     def issue(self, number):
         response = get('%s/issues/%s' % (self.repos_url, number),
@@ -89,7 +89,7 @@ class GitHub(Service):
         if response.status_code == 200:
             return GitHubIssue(response.json(), self.auth, self.headers)
         else:
-            raise GitIssueError(response.reason)
+            raise GitIssueError(response)
         raise GitIssueError('could not find issue: %s' % number)
 
     def issues(self, state):
@@ -107,7 +107,7 @@ class GitHub(Service):
                 next_url = response.links['next'][
                     'url'] if 'next' in response.links else None
             else:
-                raise GitIssueError(response.reason)
+                raise GitIssueError(response)
         return issues
 
     def user_search(self, keyword):
@@ -118,7 +118,7 @@ class GitHub(Service):
         if response.status_code == 200:
             return [GitHubUser(user) for user in response.json()['items']]
         else:
-            raise GitIssueError(response.reason)
+            raise GitIssueError(response)
 
     def labels(self):
         response = get('%s/labels' % self.repos_url,
@@ -127,7 +127,7 @@ class GitHub(Service):
         if response.status_code == 200:
             labels = [GitHubLabel(label) for label in response.json()]
         else:
-            raise GitIssueError(response.reason)
+            raise GitIssueError(response)
         return labels
 
     def milestones(self):
@@ -138,7 +138,7 @@ class GitHub(Service):
             milestones = [GitHubMilestone(milestones)
                           for milestones in response.json()]
         else:
-            raise GitIssueError(response.reason)
+            raise GitIssueError(response)
         return milestones
 
 
@@ -176,14 +176,14 @@ class GitHubIssue(Issue):
         if response.status_code == 201:
             return GitHubIssueComment(response.json())
         else:
-            raise GitIssueError(response.reason)
+            raise GitIssueError(response)
 
     def comments(self):
         response = get(self.comments_url, auth=self.auth, headers=self.headers)
         if response.status_code == 200:
             return [GitHubIssueComment(comment) for comment in response.json()]
         else:
-            raise GitIssueError(response.reason)
+            raise GitIssueError(response)
 
     def events(self):
         response = get(self.events_url, auth=self.auth, headers=self.headers)
@@ -198,7 +198,7 @@ class GitHubIssue(Issue):
                     events.append(GitHubIssueEvent(event))
             return events
         else:
-            raise GitIssueError(response.reason)
+            raise GitIssueError(response)
 
     def edit(self, **kwargs):
         data = {}
@@ -233,13 +233,13 @@ class GitHubIssue(Issue):
             if not any([label.name == 'none' for label in labels]):
                 data['labels'] = [label.name for label in labels]
         if len(data) == 0:
-            raise GitIssueError('aborted update due to no changes')
+            raise GitIssueError('aborted edit due to no changes')
         response = patch(
             self.issue_url, auth=self.auth, headers=self.headers, json=data)
         if response.status_code == 200:
             return GitHubIssue(response.json(), self.auth, self.headers)
         else:
-            raise GitIssueError(response.reason)
+            raise GitIssueError(response)
 
     def close(self, **kwargs):
         comment = kwargs.pop('comment', None)
@@ -255,7 +255,7 @@ class GitHubIssue(Issue):
         if response.status_code == 200:
             return GitHubIssue(response.json(), self.auth, self.headers)
         else:
-            raise GitIssueError(response.reason)
+            raise GitIssueError(response)
 
     def reopen(self):
         response = patch(
@@ -266,7 +266,7 @@ class GitHubIssue(Issue):
         if response.status_code == 200:
             return GitHubIssue(response.json(), self.auth, self.headers)
         else:
-            raise GitIssueError(response.reason)
+            raise GitIssueError(response)
 
     def url(self):
         return self.html_url

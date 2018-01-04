@@ -77,7 +77,7 @@ class Gogs(Service):
         if response.status_code == 201:
             return GogsIssue(response.json(), self.repos_url, self.header)
         else:
-            raise GitIssueError(response.reason)
+            raise GitIssueError(response)
 
     def issue(self, number):
         response = get('%s/issues/%s' % (self.repos_url, number),
@@ -85,7 +85,7 @@ class Gogs(Service):
         if response.status_code == 200:
             return GogsIssue(response.json(), self.repos_url, self.header)
         else:
-            raise GitIssueError(response.reason)
+            raise GitIssueError(response)
 
     def issues(self, state):
         # Parameters are not documented, this is from the Gogs issue page URL.
@@ -112,7 +112,7 @@ class Gogs(Service):
                     next_url = response.links['next'][
                         'url'] if 'next' in response.links else None
                 else:
-                    raise GitIssueError(response.reason)
+                    raise GitIssueError(response)
         return reversed(sorted(issues))
 
     def labels(self):
@@ -120,7 +120,7 @@ class Gogs(Service):
         if response.status_code == 200:
             labels = [GogsLabel(label) for label in response.json()]
         else:
-            raise GitIssueError(response.reason)
+            raise GitIssueError(response)
         return labels
 
     def milestones(self):
@@ -129,7 +129,7 @@ class Gogs(Service):
             milestones = [GogsMilestone(milestone)
                           for milestone in response.json()]
         else:
-            raise GitIssueError(response.reason)
+            raise GitIssueError(response)
         return milestones
 
     def user_search(self, keyword):
@@ -139,7 +139,7 @@ class Gogs(Service):
         if response.status_code == 200:
             users = response.json()['data']
         else:
-            raise GitIssueError(response.reason)
+            raise GitIssueError(response)
         if len(users) == 0:
             raise GitIssueError('unable to find user: %s' % keyword)
         return [GogsUser(user) for user in users]
@@ -177,7 +177,7 @@ class GogsIssue(Issue):
         if response.status_code == 201:
             return GogsIssueComment(response.json(), self.number)
         else:
-            raise GitIssueError(response.reason)
+            raise GitIssueError(response)
 
     def _comments_(self):
         response = get('%s/%r/comments' % (self.issues_url, self.number),
@@ -185,7 +185,7 @@ class GogsIssue(Issue):
         if response.status_code == 200:
             self.cache['comments'] = response.json()
         else:
-            raise GitIssueError(response.reason)
+            raise GitIssueError(response)
 
     def comments(self):
         # NOTE: Gogs reports events as comments with an empty body, so we cache
@@ -246,7 +246,7 @@ class GogsIssue(Issue):
             if not any([label.name == 'none' for label in labels]):
                 data['labels'] = [label.id for label in labels]
         if len(data) == 0:
-            raise GitIssueError('aborted update due to no changes')
+            raise GitIssueError('aborted edit due to no changes')
         if 'labels' in data:
             # NOTE: Work around for Gogs not supporting editing of labels using
             # the edit issue API, instead use the explicit issue labels API.
@@ -258,14 +258,14 @@ class GogsIssue(Issue):
                 response = delete(
                     '%s/labels' % self.issue_url, headers=self.header)
                 if response.status_code != 204:
-                    raise GitIssueError(response.reason)
+                    raise GitIssueError(response)
             else:
                 # Replace all labels.
                 response = put('%s/labels' % self.issue_url,
                                headers=self.header,
                                json={'labels': data.pop('labels')})
                 if response.status_code != 200:
-                    raise GitIssueError(response.reason)
+                    raise GitIssueError(response)
         response = patch(
             '%s/%r' % (self.issues_url, self.number),
             headers=self.header,
@@ -273,7 +273,7 @@ class GogsIssue(Issue):
         if response.status_code == 201:
             return GogsIssue(response.json(), self.repos_url, self.header)
         else:
-            raise GitIssueError(response.reason)
+            raise GitIssueError(response)
 
     def close(self, **kwargs):
         comment = kwargs.pop('comment', None)
@@ -288,7 +288,7 @@ class GogsIssue(Issue):
         if response.status_code == 201:
             return GogsIssue(response.json(), self.repos_url, self.header)
         else:
-            raise GitIssueError(response.reason)
+            raise GitIssueError(response)
 
     def reopen(self):
         response = patch(
@@ -298,7 +298,7 @@ class GogsIssue(Issue):
         if response.status_code == 201:
             return GogsIssue(response.json(), self.repos_url, self.header)
         else:
-            raise GitIssueError(response.reason)
+            raise GitIssueError(response)
 
     def url(self):
         # TODO: This should not assume https.

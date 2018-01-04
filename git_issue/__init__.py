@@ -3,11 +3,17 @@
 from __future__ import print_function
 
 from subprocess import CalledProcessError, check_output
+from requests import Response
 
 
 class GitIssueError(Exception):
     """Exception class for git_issue."""
-    pass
+
+    def __init__(self, message):
+        if isinstance(message, Response):
+            super().__init__('%s %s' % message)
+        else:
+            super().__init__(message)
 
 
 def get_service():
@@ -22,9 +28,11 @@ def get_service():
         try:
             # NOTE: Import and add new services here.
             from git_issue.github import GitHub
+            from git_issue.gitlab import GitLab
             from git_issue.gogs import Gogs
             return {
                 'GitHub': GitHub,
+                'GitLab': GitLab,
                 'Gogs': Gogs,
             }[name]()
         except KeyError:
