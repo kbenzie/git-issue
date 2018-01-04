@@ -8,7 +8,7 @@ from warnings import warn
 from arrow import utcnow
 from git_issue import GitIssueError
 from git_issue.service import (Issue, IssueComment, IssueEvent, IssueNumber,
-                               Label, Milestone, Service, User,
+                               Label, Milestone, Service, User, get_protocol,
                                get_repo_owner_name, get_resource, get_token)
 from past.builtins import basestring
 from requests import delete, get, patch, post, put
@@ -44,8 +44,7 @@ class Gogs(Service):
 
     def __init__(self):
         super().__init__()
-        # TODO: This should not assume https.
-        self.url = 'https://%s' % get_resource('Gogs')
+        self.url = '%s://%s' % (get_protocol('Gogs'), get_resource('Gogs'))
         self.api_url = '%s/api/v1' % self.url
         self.repos_url = '%s/repos/%s' % (self.api_url,
                                           get_repo_owner_name('Gogs'))
@@ -301,9 +300,9 @@ class GogsIssue(Issue):
             raise GitIssueError(response)
 
     def url(self):
-        # TODO: This should not assume https.
-        return 'https://%s/%s/issues/%r' % (
-            get_resource('Gogs'), get_repo_owner_name('Gogs'), self.number)
+        return '%s://%s/%s/issues/%r' % (
+            get_protocol('Gogs'), get_resource('Gogs'),
+            get_repo_owner_name('Gogs'), self.number)
 
 
 class GogsIssueNumber(IssueNumber):
@@ -331,10 +330,9 @@ class GogsIssueComment(IssueComment):
         self.id = comment['id']
 
     def url(self):
-        # TODO: This should not assume https.
-        return 'https://%s/%s/issues/%r/#issuecomment-%s' % (
-            get_resource('Gogs'), get_repo_owner_name('Gogs'),
-            self.issue_number, self.id)
+        return '%s://%s/%s/issues/%r/#issuecomment-%s' % (
+            get_protocol('Gogs'), get_resource('Gogs'),
+            get_repo_owner_name('Gogs'), self.issue_number, self.id)
 
 
 class GogsIssueEvent(IssueEvent):

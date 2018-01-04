@@ -18,15 +18,15 @@ def get_protocol(name):
     """Get the service URL protocol.
 
     Inspects the value of ``issue.<service>.https`` for ``0`` or ``false``
-    to assertain the URL schema to use, defaults to ``'https://'`` if the
-    config setting is not found, ``'http://'`` is returned otherwise.
+    to assertain the URL schema to use, defaults to ``'https'`` if the
+    config setting is not found, ``'http'`` is returned otherwise.
 
     Arguments:
         :name: Name of the service.
 
     Returns:
-        :str: ``'https://'`` or ``'http://'`` depending on the value of
-            ``issue.<service>.https`` config setting.
+        :str: ``'https'`` or ``'http'`` depending on the value of
+        ``issue.<service>.https`` config setting.
     """
     with open(devnull, 'w+b') as DEVNULL:
         try:
@@ -34,6 +34,7 @@ def get_protocol(name):
                 ['git', 'config', '--get', 'issue.%s.url' % name],
                 stderr=DEVNULL).strip()
             _check_service_url_(name, url)
+            print(parse(url).protocol)
             return parse(url).protocol
         except CalledProcessError:
             try:
@@ -41,10 +42,10 @@ def get_protocol(name):
                     ['git', 'config', '--get', 'issue.%s.https' % name],
                     stderr=DEVNULL).strip().lower()
                 if use_https == '0' or use_https == 'false':
-                    return 'http://'
+                    return 'http'
             except CalledProcessError:
                 pass
-    return 'https://'
+    return 'https'
 
 
 def get_remote(name):

@@ -7,7 +7,7 @@ from builtins import super
 from arrow import utcnow
 from git_issue import GitIssueError
 from git_issue.service import (Issue, IssueComment, IssueEvent, IssueNumber,
-                               Label, Milestone, Service, User,
+                               Label, Milestone, Service, User, get_protocol,
                                get_repo_owner_name, get_resource, get_token)
 from past.builtins import basestring
 from requests import get, patch, post
@@ -44,9 +44,10 @@ class GitHub(Service):
 
     def __init__(self):
         super().__init__()
+        protocol = get_protocol('GitHub')
         resource = get_resource('GitHub')
-        self.url = 'https://%s' % resource
-        self.api_url = 'https://api.%s' % resource
+        self.url = '%s://%s' % (protocol, resource)
+        self.api_url = '%s://api.%s' % (protocol, resource)
         self.repos_url = '%s/repos/%s' % (self.api_url,
                                           get_repo_owner_name('GitHub'))
         self.issues_url = '%s/issues' % self.repos_url

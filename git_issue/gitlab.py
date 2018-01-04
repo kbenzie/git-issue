@@ -61,8 +61,8 @@ class GitLab(Service):
 
     def __init__(self):
         super().__init__()
-        self.api_url = '%s%s/api/v4' % (get_protocol('GitLab'),
-                                        get_resource('GitLab'))
+        self.api_url = '%s://%s/api/v4' % (get_protocol('GitLab'),
+                                           get_resource('GitLab'))
         self.project_url = '%s/projects/%s' % (
             self.api_url, quote_plus(get_repo_owner_name('GitLab')))
         self.issues_url = '%s/issues' % self.project_url
@@ -261,7 +261,7 @@ class GitLabIssue(Issue):
             raise GitIssueError(response)
 
     def url(self):
-        return '%s%s/%s/issues/%s' % (
+        return '%s://%s/%s/issues/%s' % (
             get_protocol('GitLab'), get_resource('GitLab'),
             get_repo_owner_name('GitLab'), self.number.iid)
 
