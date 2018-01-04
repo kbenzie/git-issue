@@ -2,6 +2,7 @@
 
 from __future__ import print_function
 
+from builtins import super
 from subprocess import CalledProcessError, check_output
 from requests import Response
 

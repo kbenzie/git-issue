@@ -172,6 +172,8 @@ Please report any issues on [GitHub][issues].
 
 ## HISTORY
 
+0.3.2 - Fix `GitIssueError` bug.
+
 0.3.1 - Fix `issue.<service>.https` bug.
 
 0.3.0 - Support `GitLab` service.
