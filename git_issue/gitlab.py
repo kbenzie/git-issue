@@ -90,6 +90,12 @@ class GitLab(Service):
             raise GitIssueError(response)
 
     def issue(self, number):
+        try:
+            # GitLab returns a list of strings for labels, cache labels so we
+            # can get their color
+            CACHE['labels'] = self.labels()
+        except GitIssueError:
+            pass
         response = get('%s/%s' % (self.issues_url, number),
                        headers=_headers_())
         if response.status_code == 200:
@@ -166,9 +172,11 @@ class GitLabIssue(Issue):
             GitLabUser(issue['author']),
             issue['created_at'],
             updated=issue['updated_at'],
-            assignee=GitLabUser(issue['assignee']),
+            assignee=GitLabUser(issue['assignee'])
+            if issue['assignee'] else None,
             labels=[GitLabLabel(label) for label in issue['labels']],
-            milestone=GitLabMilestone(issue['milestone']),
+            milestone=GitLabMilestone(issue['milestone']
+                                      if issue['milestone'] else None),
             num_comments=issue['user_notes_count'])
         self.issue_url = '%s/%s' % (url, issue['iid'])
         self.notes_url = '%s/notes' % self.issue_url

@@ -15,6 +15,7 @@ from colorama import Fore
 from git_issue import GitIssueError, get_service
 from git_issue.service import IssueComment, IssueEvent
 from pick import pick
+from requests import ConnectionError
 
 
 def _warn_(message):
@@ -35,6 +36,14 @@ def _error_(message):
             'message': message
         },
         file=stderr)
+    exit(1)
+
+
+def _print_exception_():
+    from sys import exc_info
+    from traceback import print_exception
+    exc_type, exc_value, exc_traceback = exc_info()
+    print_exception(exc_type, exc_value, exc_traceback)
     exit(1)
 
 
@@ -477,12 +486,19 @@ def main():
         command(get_service(), **args)
     except GitIssueError as error:
         if debug:
-            from sys import exc_info
-            from traceback import print_exception
-            exc_type, exc_value, exc_traceback = exc_info()
-            print_exception(exc_type, exc_value, exc_traceback)
-            exit(1)
+            _print_exception_()
         _error_(error.message)
+    except ConnectionError as error:
+        if debug:
+            _print_exception_()
+        service_name = check_output(
+            ['git', 'config', '--get', 'issue.service']).strip()
+        _error_('authentication failed, check that:'
+                '\n* issue.{0}.token is correct'
+                '\n* issue.{0}.url is correct, if applicable'
+                '\n* issue.{0}.remote is correct, if applicable'
+                '\n* issue.{0}.https is correct, if applicable'
+                .format(service_name))
     except KeyboardInterrupt:
         exit(130)
 
