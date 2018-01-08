@@ -172,6 +172,8 @@ Please report any issues on [GitHub][issues].
 
 ## HISTORY
 
+0.3.4 - Fix editing labels with Gogs.
+
 0.3.3 - Improve error message on authentication failure.
 
 0.3.2 - Fix `GitIssueError` bug.

@@ -262,7 +262,7 @@ class GogsIssue(Issue):
                 # Replace all labels.
                 response = put('%s/labels' % self.issue_url,
                                headers=self.header,
-                               json={'labels': data.pop('labels')})
+                               json={'labels': labels})
                 if response.status_code != 200:
                     raise GitIssueError(response)
         response = patch(
