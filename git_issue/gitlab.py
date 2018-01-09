@@ -175,8 +175,8 @@ class GitLabIssue(Issue):
             assignee=GitLabUser(issue['assignee'])
             if issue['assignee'] else None,
             labels=[GitLabLabel(label) for label in issue['labels']],
-            milestone=GitLabMilestone(issue['milestone']
-                                      if issue['milestone'] else None),
+            milestone=GitLabMilestone(issue['milestone'])
+            if issue['milestone'] else None,
             num_comments=issue['user_notes_count'])
         self.issue_url = '%s/%s' % (url, issue['iid'])
         self.notes_url = '%s/notes' % self.issue_url

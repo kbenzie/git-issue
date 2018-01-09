@@ -34,7 +34,6 @@ def get_protocol(name):
                 ['git', 'config', '--get', 'issue.%s.url' % name],
                 stderr=DEVNULL).strip()
             _check_service_url_(name, url)
-            print(parse(url).protocol)
             return parse(url).protocol
         except CalledProcessError:
             try:
