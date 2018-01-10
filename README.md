@@ -172,6 +172,8 @@ Please report any issues on [GitHub][issues].
 
 ## HISTORY
 
+0.3.6 - Implement GitLab comment URL.
+
 0.3.5 - Fix minor GitLab display bugs.
 
 0.3.4 - Fix editing labels with Gogs.

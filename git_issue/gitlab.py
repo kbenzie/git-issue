@@ -185,7 +185,7 @@ class GitLabIssue(Issue):
         response = post(
             self.notes_url, headers=_headers_(), data={'body': body})
         if response.status_code == 201:
-            return GitLabIssueComment(response.json())
+            return GitLabIssueComment(response.json(), self.number)
         else:
             raise GitIssueError(response)
 
@@ -195,7 +195,7 @@ class GitLabIssue(Issue):
         if response.status_code == 200:
             for note in response.json():
                 if not note['system']:
-                    comments.append(GitLabIssueComment(note))
+                    comments.append(GitLabIssueComment(note, self.number))
         else:
             raise GitIssueError(response)
         return comments
@@ -292,13 +292,16 @@ class GitLabIssueNumber(IssueNumber):
 class GitLabIssueComment(IssueComment):
     """GitLab IssueComment implementation."""
 
-    def __init__(self, note):
+    def __init__(self, note, issue_id):
         super().__init__(note['body'], GitLabUser(note['author']),
                          note['created_at'])
+        self.id = note['id']
+        self.issue_id = issue_id
 
     def url(self):
-        # TODO: What is the URL for a comment?
-        raise NotImplementedError
+        return '%s://%s/%s/issues/%r#note_%s' % (
+            get_protocol('GitLab'), get_resource('GitLab'),
+            get_repo_owner_name('GitLab'), self.issue_id, self.id)
 
 
 class GitLabIssueEvent(IssueEvent):
