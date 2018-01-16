@@ -4,7 +4,7 @@ from __future__ import print_function
 
 from builtins import super
 
-from arrow import utcnow
+import arrow
 from git_issue import GitIssueError
 from git_issue.service import (Issue, IssueComment, IssueEvent, IssueNumber,
                                Label, Milestone, Service, User, get_protocol,
@@ -189,15 +189,7 @@ class GitHubIssue(Issue):
     def events(self):
         response = get(self.events_url, auth=self.auth, headers=self.headers)
         if response.status_code == 200:
-            events = []
-            for event in response.json():
-                # TODO: Currently only 'closed' and 'reopned' events are
-                # supported due to limitations of other services, requires
-                # changes in the comment line interface and IssueEvent. GitHub
-                # has a lot of event types.
-                if event['event'] in ['closed', 'reopened']:
-                    events.append(GitHubIssueEvent(event))
-            return events
+            return [GitHubIssueEvent(event) for event in response.json()]
         else:
             raise GitIssueError(response)
 
@@ -292,8 +284,146 @@ class GitHubIssueEvent(IssueEvent):
     """GitHub IssueEvent implementation."""
 
     def __init__(self, event):
-        super().__init__(event['event'], GitHubUser(event['actor']),
-                         event['created_at'])
+        desc = None
+
+        # The issue was closed by the actor. When the commit_id is present, it
+        # identifies the commit that closed the issue using "closes / fixes
+        # #NN" syntax.
+        if event['event'] == 'closed':
+            desc = '%(red)sclosed%(reset)s this'
+            if event['commit_id']:
+                desc += ' by %s' % event['commit_id'][:8]
+
+        # The issue was reopened by the actor.
+        if event['event'] == 'reopened':
+            desc = '%(green)sreopened%(reset)s this'
+
+        # The actor subscribed to receive notifications for an issue.
+        if event['event'] == 'subscribed':
+            desc = 'subscribed to this'
+
+        # The issue was merged by the actor. The `commit_id` attribute is the
+        # SHA1 of the HEAD commit that was merged.
+        if event['event'] == 'merged':
+            desc = 'merged'
+            if 'commit_id' in event:
+                desc += ' by %s' % event['commit_id'][:8]
+
+        # The issue was referenced from a commit message. The `commit_id`
+        # attribute is the commit SHA1 of where that happened.
+        if event['event'] == 'referenced':
+            desc = 'referenced by %s' % event['commit_id'][:8]
+
+        # The actor was @mentioned in an issue body.
+        if event['event'] == 'mentioned':
+            desc = 'mentioned this'
+
+        # The issue was assigned to the actor.
+        if event['event'] == 'assigned':
+            if event['assigner']['id'] == event['assignee']['id']:
+                desc = 'self-assigned this'
+            else:
+                desc = 'assigned this to %s' % GitHubUser(event['assignee'])
+
+        # The actor was unassigned from the issue.
+        if event['event'] == 'unassigned':
+            desc = 'removed assignment'
+
+        # A label was added to the issue.
+        if event['event'] == 'labeled':
+            desc = 'added the %s label' % GitHubLabel(event['label'])
+
+        # A label was removed from the issue.
+        if event['event'] == 'unlabeled':
+            desc = 'removed the %s label' % GitHubLabel(event['label'])
+
+        # The issue was added to a milestone.
+        if event['event'] == 'milestoned':
+            desc = 'added this to the %s milestone' % event['milestone'][
+                'title']
+
+        # The issue was removed from a milestone.
+        if event['event'] == 'demilestoned':
+            desc = 'removed from the %s milestone' % event['milestone'][
+                'title']
+
+        # The issue title was changed.
+        if event['event'] == 'renamed':
+            desc = 'changed the title from %(white)s{}%(reset)s'.format(event[
+                'rename']['from'])
+            desc += ' to %(white)s{}%(reset)s'.format(event['rename']['to'])
+
+        # The issue was locked by the actor.
+        if event['event'] == 'locked':
+            desc = 'locked {}'.format('as %s ' % event['lock_reason']
+                                      if 'lock_reason' in event else '')
+            desc += 'and limited converstation to collaberators'
+
+        # The issue was unlocked by the actor.
+        if event['event'] == 'unlocked':
+            desc = 'unlocked this converstation'
+
+        # TODO: The pull request's branch was deleted.
+        if event['event'] == 'head_ref_deleted':
+            pass
+
+        # TODO: The pull request's branch was restored.
+        if event['event'] == 'head_ref_restored':
+            pass
+
+        # TODO: The actor dismissed a review from the pull request.
+        if event['event'] == 'review_dismissed':
+            pass
+
+        # TODO: The actor requested review from the subject on this pull
+        # request.
+        if event['event'] == 'review_requested':
+            pass
+
+        # TODO: The actor removed the review request for the subject on this
+        # pull request.
+        if event['event'] == 'review_request_removed':
+            pass
+
+        # TODO: A user with write permissions marked an issue as a duplicate of
+        # another issue or a pull request as a duplicate of another pull
+        # request.
+        if event['event'] == 'marked_as_duplicate':
+            pass
+
+        # TODO: An issue that a user had previously marked as a duplicate of
+        # another issue is no longer considered a duplicate, or a pull request
+        # that a user had previously marked as a duplicate of another pull
+        # request is no longer considered a duplicate.
+        if event['event'] == 'unmarked_as_duplicate':
+            pass
+
+        # The issue was added to a project board.
+        if event['event'] == 'added_to_project':
+            desc = 'added to project'
+            if 'project' in event:
+                desc += ' %s' % event['project']['name']
+
+        # TODO: The issue was moved between columns in a project board.
+        if event['event'] == 'moved_columns_in_project':
+            pass
+
+        # The issue was removed from a project board.
+        if event['event'] == 'removed_from_project':
+            desc = 'removed from project'
+            if 'project' in event:
+                desc += ' %s' % event['project']['name']
+
+        # TODO: The issue was created by converting a note in a project board
+        # to an issue.
+        if event['event'] == 'converted_note_to_issue':
+            pass
+
+        if not desc:
+            # TODO: Remove this once all event types are implemented
+            desc = str(event['event'].replace('_', ' '))
+
+        super().__init__(desc, GitHubUser(event['actor']), event['created_at'])
 
 
 class GitHubUser(User):
@@ -325,7 +455,8 @@ class GitHubLabel(Label):
         if not label:
             label = {'name': 'none', 'color': 'ffffff', 'id': 0}
         super().__init__(label['name'], label['color'])
-        self.id = label['id']
+        if 'id' in label:
+            self.id = label['id']
 
     def __eq__(self, other):
         return self.id == other.id
@@ -342,7 +473,7 @@ class GitHubMilestone(Milestone):
             milestone = {
                 'title': 'none',
                 'description': '',
-                'due_on': '%s' % utcnow(),
+                'due_on': '%s' % arrow.utcnow(),
                 'state': 'closed',
                 'number': 0,
                 'id': 0,
@@ -364,7 +495,7 @@ class GitHubIssueComment(IssueComment):
 
     def __init__(self, comment):
         super().__init__(comment['body'], GitHubUser(comment['user']),
-                         comment['created_at'])
+                         comment['created_at'], comment['id'])
         self.html_url = comment['html_url']
 
     def url(self):

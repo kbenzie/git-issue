@@ -51,6 +51,28 @@ def _git_dir_():
     return check_output(['git', 'rev-parse', '--git-dir']).strip()
 
 
+def _colors_(reset):
+    return {
+        'reset': reset,
+        'black': Fore.RESET,
+        'blue': Fore.BLUE,
+        'green': Fore.GREEN,
+        'cyan': Fore.CYAN,
+        'red': Fore.RED,
+        'magenta': Fore.MAGENTA,
+        'yellow': Fore.YELLOW,
+        'white': Fore.WHITE,
+        'lightblack': Fore.LIGHTBLACK_EX,
+        'lightblue': Fore.LIGHTBLUE_EX,
+        'lightgreen': Fore.LIGHTGREEN_EX,
+        'lightcyan': Fore.LIGHTCYAN_EX,
+        'lightred': Fore.LIGHTRED_EX,
+        'lightmagenta': Fore.LIGHTMAGENTA_EX,
+        'lightyellow': Fore.LIGHTYELLOW_EX,
+        'lightwhite': Fore.LIGHTWHITE_EX,
+    }
+
+
 def _hex_to_term_(color):
     def _quantize_(color):
         if color <= 0x40:
@@ -167,41 +189,37 @@ def _pager_(content):
         print(content)
 
 
-def _state_color_(state):
-    return {'open': Fore.GREEN,
-            'reopened': Fore.GREEN,
-            'closed': Fore.RED}[state]
-
-
 def _human_date_(date):
     return date.format('ddd MMM DD HH:mm:ss YYYY ZZ')
 
 
 def _issue_state_(issue):
     state = '%(color)s%(state)s%(yellow)s' % {
-        'color': _state_color_(issue.state),
+        'color': {'open': Fore.GREEN,
+                  'closed': Fore.RED}[issue.state],
         'state': issue.state,
         'yellow': Fore.YELLOW
     }
     if issue.milestone:
         state += ' %s' % issue.milestone.title
     if len(issue.labels) > 0:
-        state += ' ' + ' '.join(['%(color)s%(label)s%(yellow)s' %
-                                 {'color': _hex_to_term_(label.color),
-                                  'label': label.name,
-                                  'yellow': Fore.YELLOW}
+        state += ' ' + ' '.join([label.__str__() % _colors_(Fore.YELLOW)
                                  for label in issue.labels])
     return state
 
 
 def _issue_summary_(issue, num_comments=0):
-    title = '%(yellow)s%(number)s %(title)s' % {'yellow': Fore.YELLOW,
-                                                'number': issue.number,
-                                                'title': issue.title}
+    title = '%(yellow)s%(number)s %(title)s' % {
+        'yellow': Fore.YELLOW,
+        'number': issue.number,
+        'title': issue.title
+    }
     output = [
-        '%(title)s (%(state)s)%(reset)s' % {'title': title,
-                                            'state': _issue_state_(issue),
-                                            'reset': Fore.RESET},
+        '%(title)s (%(state)s)%(reset)s' % {
+            'title': title,
+            'state': _issue_state_(issue),
+            'reset': Fore.RESET
+        },
         'Author:   %s' % issue.author,
     ]
     if issue.assignee:
@@ -218,18 +236,19 @@ def _issue_summary_(issue, num_comments=0):
 
 
 def _finish_(action, number, url):
-    print('%(color)s%(action)s%(reset)s issue %(number)s: %(url)s' %
-          {'color': {
-              'Created': Fore.GREEN,
-              'Edited': Fore.YELLOW,
-              'Commented on': Fore.RESET,
-              'Closed': Fore.RED,
-              'Reopened': Fore.GREEN,
-          }[action],
-           'action': action,
-           'reset': Fore.RESET,
-           'number': number,
-           'url': url})
+    print('%(color)s%(action)s%(reset)s issue %(number)s: %(url)s' % {
+        'color': {
+            'Created': Fore.GREEN,
+            'Edited': Fore.YELLOW,
+            'Commented on': Fore.RESET,
+            'Closed': Fore.RED,
+            'Reopened': Fore.GREEN,
+        }[action],
+        'action': action,
+        'reset': Fore.RESET,
+        'number': number,
+        'url': url
+    })
     exit(0)
 
 
@@ -329,28 +348,32 @@ def reopen(service, **kwargs):
 def show(service, **kwargs):
     """Show detail of a single issue."""
     issue = service.issue(kwargs.pop('number'))
+    quiet = kwargs.pop('quiet')
     summary = kwargs.pop('summary')
     output = _issue_summary_(issue, issue.num_comments if summary else 0)
     if not summary:
-        for item in sorted(issue.comments() + issue.events()):
+        items = issue.comments()
+        if not quiet:
+            items += issue.events()
+        for item in sorted(items):
             if isinstance(item, IssueComment):
                 output += [
                     '',
-                    'Comment:  %s' % item.author,
+                    '%sComment %s%s' % (Fore.YELLOW, item.id, Fore.RESET),
+                    'Author:   %s' % item.author,
                     'Date:     %s' % _human_date_(item.created),
                     '',
                 ]
                 output += ['    %s' % line for line in item.body.splitlines()]
             elif isinstance(item, IssueEvent):
                 output += [
-                    '',
-                    '%(color)s%(state)s%(reset)s%(user)s' % {
-                        'color': _state_color_(item.event),
-                        'state': ('%s:' % item.event.capitalize()).ljust(10),
+                    '', '%(color)s%(actor)s %(event)s %(created)s%(reset)s' % {
+                        'color': Fore.YELLOW,
+                        'actor': item.actor,
+                        'event': item.event % _colors_(Fore.YELLOW),
+                        'created': item.created.humanize(),
                         'reset': Fore.RESET,
-                        'user': item.actor,
-                    },
-                    'Date:     %s' % _human_date_(item.created),
+                    }
                 ]
     _pager_('\n'.join(output))
     exit(0)
@@ -457,6 +480,7 @@ def main():
         show_parser = subparsers.add_parser('show')
         show_parser.set_defaults(_command_=show)
         show_parser.add_argument('--summary', action='store_true')
+        show_parser.add_argument('-q', '--quiet', action='store_true')
         show_parser.add_argument('number')
 
         list_parser = subparsers.add_parser('list')

@@ -3,6 +3,7 @@
 from __future__ import print_function
 
 from builtins import super
+from re import findall
 
 from arrow import utcnow
 from git_issue import GitIssueError
@@ -94,6 +95,7 @@ class GitLab(Service):
             # GitLab returns a list of strings for labels, cache labels so we
             # can get their color
             CACHE['labels'] = self.labels()
+            CACHE['milestones'] = self.milestones()
         except GitIssueError:
             pass
         response = get('%s/%s' % (self.issues_url, number),
@@ -205,7 +207,7 @@ class GitLabIssue(Issue):
         response = get(self.notes_url, headers=_headers_())
         if response.status_code == 200:
             for note in response.json():
-                if note['system'] and note['body'] in ['closed', 'reopened']:
+                if note['system']:
                     events.append(GitLabIssueEvent(note))
         else:
             raise GitIssueError(response)
@@ -294,8 +296,7 @@ class GitLabIssueComment(IssueComment):
 
     def __init__(self, note, issue_id):
         super().__init__(note['body'], GitLabUser(note['author']),
-                         note['created_at'])
-        self.id = note['id']
+                         note['created_at'], note['id'])
         self.issue_id = issue_id
 
     def url(self):
@@ -308,7 +309,41 @@ class GitLabIssueEvent(IssueEvent):
     """GitLab IssueEvent implementation."""
 
     def __init__(self, event):
-        super().__init__(event['body'], GitLabUser(event['author']),
+        body = event['body']
+
+        if 'closed' in body:
+            body = '%(red)sclosed%(reset)s'
+
+        if 'reopened' in body:
+            body = '%(green)sreopened%(reset)s'
+
+        if 'changed title' in body:
+            body = body.replace('{+', '').replace('+}', '').replace(
+                '{-', '').replace('-}', '')
+            body = body.replace(' **', ' %(white)s').replace('**', '%(reset)s')
+
+        if 'milestone' in body:
+            # Replace %\d with milestone
+            milestone_ids = findall(r'%\d+', body)
+            if 'milestones' in CACHE:
+                for milestone_id in milestone_ids:
+                    iid = milestone_id[1:]
+                    for milestone in CACHE['milestones']:
+                        if str(milestone.iid) == iid:
+                            body = body.replace(milestone_id, milestone.title)
+
+        if 'label' in body:
+            label_iids = findall(r'~\d+', body)
+            if 'labels' in CACHE:
+                for label_iid in label_iids:
+                    iid = label_iid[1:]
+                    for label in CACHE['labels']:
+                        if str(label.id) == iid:
+                            body = body.replace(label_iid, '%s' % label)
+
+        # TODO: Other events?
+
+        super().__init__(body, GitLabUser(event['author']),
                          event['created_at'])
 
 
@@ -327,6 +362,7 @@ class GitLabLabel(Label):
         if not label:
             name = 'none'
             color = 'ffffff'
+            self.id = None
         else:
             if isinstance(label, basestring):
                 # GitLab returns a list of strings for labels, cache labels so
@@ -335,12 +371,13 @@ class GitLabLabel(Label):
                 if 'labels' in CACHE:
                     for l in CACHE['labels']:
                         if l.name == label:
-                            color = '%x%x%x' % l.color
+                            color = '%02x%02x%02x' % l.color
                 else:
                     color = 'ffffff'
             else:
                 name = label['name']
                 color = label['color'].replace('#', '')
+                self.id = label['id']
         super().__init__(name, color)
 
 
@@ -358,3 +395,4 @@ class GitLabMilestone(Milestone):
                          milestone['due_date'],
                          _decode_state_(milestone['state']))
         self.id = milestone['id']
+        self.iid = milestone['iid']

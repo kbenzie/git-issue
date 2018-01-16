@@ -31,7 +31,7 @@
 \fBgit issue list\fR [\fB\-\-oneline\fR] [{\fIopen\fR,\fIclosed\fR,\fIall\fR}]
 .
 .br
-\fBgit issue show\fR [\fB\-\-summary\fR] \fInumber\fR
+\fBgit issue show\fR [\fB\-q\fR] [\fB\-\-summary\fR] \fInumber\fR
 .
 .SH "DESCRIPTION"
 \fBgit\-issue\fR provides a command line interface to remote issue trackers allowing users to manage issues in the same way they manage git(1) repositories\. A remote issue tracker is referred to as \fIservice\fR\. Multiple \fIservice\fR providers can be supported by \fBgit\-issue\fR, see \fISERVICES\fR for the supported \fIservice\fR list\. \fBgit\-issue\fR determines which \fIservice\fR to use by querying \fBissue\.service\fR\. Authentication with the \fIservice\fR is performed using an API token, \fBgit\-issue\fR queries \fBissue\.<service>\.token\fR to gain access to the \fIservice\fR\.
@@ -103,6 +103,10 @@ The issue number to manage, the actual representation may change dependant on co
 .TP
 \fIopen\fR, \fIclosed\fR, \fIall\fR
 The current state of issues to list, if the default is \fIopen\fR\.
+.
+.TP
+\fB\-q\fR, \fB\-\-quiet\fR
+Suppress displaying issue events, only available for \fBgit issue show\fR\.
 .
 .TP
 \fB\-\-summary\fR
@@ -197,6 +201,9 @@ Any other error codes are propagated from the underlying command, i\.e\. git\-co
 Please report any issues on GitHub \fIhttps://github\.com/kbenzie/git\-issue/issues\fR\.
 .
 .SH "HISTORY"
+0\.3\.7 \- Support arbitrary issue events\.
+.
+.P
 0\.3\.6 \- Implement GitLab comment URL\.
 .
 .P

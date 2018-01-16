@@ -422,7 +422,7 @@ class IssueComment(with_metaclass(ABCMeta)):
         :created: UTC encoded date string of comment creation.
     """
 
-    def __init__(self, body, author, created):
+    def __init__(self, body, author, created, comment_id):
         self.body = body
         if not isinstance(author, User):
             raise ValueError('author must be a subclass of User')
@@ -430,6 +430,7 @@ class IssueComment(with_metaclass(ABCMeta)):
         if not created or not isinstance(created, basestring):
             raise ValueError('created must be a string')
         self.created = arrow.get(created)
+        self.id = comment_id
 
     def __lt__(self, other):
         return self.created < other.created
@@ -450,9 +451,8 @@ class IssueEvent(with_metaclass(ABCMeta)):
     """
 
     def __init__(self, event, actor, created):
-        if event not in ['closed', 'reopened']:
-            raise ValueError(
-                'event must be a string of either "closed" or "reopened"')
+        if not isinstance(event, basestring):
+            raise ValueError('event must be a string')
         self.event = event
         if not isinstance(actor, User):
             raise ValueError('actor must be a subclass of User')
@@ -490,6 +490,51 @@ class User(with_metaclass(ABCMeta)):
         return ' '.join(parts)
 
 
+def _hex_to_color_(color):
+    def _quantize_(color):
+        if color <= 0x40:
+            color = 0
+        elif color <= 0x80 or color < 0xbf:
+            color = 0x80
+        elif color <= 0xff:
+            color = 0xff
+        return color
+
+    def _normalize_(color, upper):
+        if color[0] == upper or color[1] == upper or color[2] == upper:
+            if color[0] != upper:
+                color[0] = 0
+            if color[1] != upper:
+                color[1] = 0
+            if color[2] != upper:
+                color[2] = 0
+        return color
+
+    color = [
+        _quantize_(color.red), _quantize_(color.green), _quantize_(color.blue)
+    ]
+    color = _normalize_(color, 0xff)
+    color = _normalize_(color, 0x80)
+
+    return {
+        (0x00, 0x00, 0x00): 'black',
+        (0x00, 0x00, 0x80): 'blue',
+        (0x00, 0x80, 0x00): 'green',
+        (0x00, 0x80, 0x80): 'cyan',
+        (0x80, 0x00, 0x00): 'red',
+        (0x80, 0x00, 0x80): 'magenta',
+        (0x80, 0x80, 0x00): 'yellow',
+        (0x80, 0x80, 0x80): 'lightblack',
+        (0x00, 0x00, 0xff): 'lightblue',
+        (0x00, 0xff, 0x00): 'lightgreen',
+        (0x00, 0xff, 0xff): 'lightcyan',
+        (0xff, 0x00, 0x00): 'lightred',
+        (0xff, 0x00, 0xff): 'lightmagenta',
+        (0xff, 0xff, 0x00): 'lightyellow',
+        (0xff, 0xff, 0xff): 'lightwhite',
+    }[tuple(color)]
+
+
 class Label(with_metaclass(ABCMeta)):
     """Generic class to represent a label.
 
@@ -506,6 +551,14 @@ class Label(with_metaclass(ABCMeta)):
             raise ValueError('color must be a 6 character string')
         self.color = namedtuple('Color', 'red green blue')(int(
             color[:2], 16), int(color[2:4], 16), int(color[4:], 16))
+
+    def __str__(self):
+        from sys import stdout
+        if stdout.isatty():
+            return '%({0})s{1}%(reset)s'.format(
+                _hex_to_color_(self.color), self.name)
+        else:
+            return self.name
 
 
 class Milestone(with_metaclass(ABCMeta)):

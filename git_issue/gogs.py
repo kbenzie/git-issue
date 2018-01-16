@@ -325,9 +325,8 @@ class GogsIssueComment(IssueComment):
 
     def __init__(self, comment, issue_number):
         super().__init__(comment['body'], GogsUser(comment['user']),
-                         comment['created_at'])
+                         comment['created_at'], comment['id'])
         self.issue_number = issue_number
-        self.id = comment['id']
 
     def url(self):
         return '%s://%s/%s/issues/%r/#issuecomment-%s' % (
@@ -339,7 +338,10 @@ class GogsIssueEvent(IssueEvent):
     """Gogs IssueEvent implementation."""
 
     def __init__(self, action, event):
-        super().__init__(action, GogsUser(event['user']), event['created_at'])
+        super().__init__('%({})s{}%(reset)s'.format({'reopened': 'green',
+                                                     'closed': 'red'}[action],
+                                                    action),
+                         GogsUser(event['user']), event['created_at'])
 
 
 class GogsUser(User):

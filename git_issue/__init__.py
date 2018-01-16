@@ -12,7 +12,7 @@ class GitIssueError(Exception):
 
     def __init__(self, message):
         if isinstance(message, Response):
-            super().__init__('%s %s' % message)
+            super().__init__('%s %s' % (message.status_code, message.reason))
         else:
             super().__init__(message)
 

@@ -54,8 +54,8 @@ _git-issue() {
 
         (close)
           _arguments -S \
-            '(-m --message)'{-m,--message}'[closing message]: : '\
-            '(-n --no-message)'{-n,--no-message}'[no closing message]'\
+            '(-m --message)'{-m,--message}'[closing message]: : ' \
+            '(-n --no-message)'{-n,--no-message}'[no closing message]' \
             '1: :(( "${(@f)$(git-issue complete issues --state open)}" ))' \
             && ret=0
           ;;
@@ -74,6 +74,7 @@ _git-issue() {
 
         (show)
           _arguments -S \
+            '(-q --quiet)'{-q,--quiet}'[]' \
             '--summary[print issue summary only]' \
             '1: :(( "${(@f)$(git-issue complete issues --state all)}" ))' \
             && ret=0

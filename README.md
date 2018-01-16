@@ -11,7 +11,7 @@ git-issue(1) -- Manage remote Git issue trackers
 `git issue comment` \[`-m`\] _number_  
 `git issue browse` \[`-u`\] _number_  
 `git issue list` \[`--oneline`\] \[{_open_,_closed_,_all_}\]  
-`git issue show` \[`--summary`\] _number_  
+`git issue show` \[`-q`\] \[`--summary`\] _number_  
 
 ## DESCRIPTION
 
@@ -69,6 +69,8 @@ queries `issue.<service>.token` to gain access to the _service_.
   configured service.
 * _open_, _closed_, _all_:
   The current state of issues to list, if the default is _open_.
+* `-q`, `--quiet`:
+  Suppress displaying issue events, only available for `git issue show`.
 * `--summary`:
   Print issue summary only, only available for `git issue show`.
 * `--oneline`:
@@ -171,6 +173,8 @@ activities occurring in your absence.
 Please report any issues on [GitHub][issues].
 
 ## HISTORY
+
+0.3.7 - Support arbitrary issue events.
 
 0.3.6 - Implement GitLab comment URL.
 
