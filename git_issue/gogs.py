@@ -8,8 +8,9 @@ from warnings import warn
 from arrow import utcnow
 from git_issue import GitIssueError
 from git_issue.service import (Issue, IssueComment, IssueEvent, IssueNumber,
-                               Label, Milestone, Service, User, get_protocol,
-                               get_repo_owner_name, get_resource, get_token)
+                               IssueState, Label, Milestone, Service, User,
+                               get_protocol, get_repo_owner_name, get_resource,
+                               get_token)
 from past.builtins import basestring
 from requests import delete, get, patch, post, put
 
@@ -152,7 +153,7 @@ class GogsIssue(Issue):
             GogsIssueNumber(issue),
             issue['title'],
             issue['body'],
-            issue['state'],
+            GogsIssueState(issue['state']),
             GogsUser(issue['user']),
             issue['created_at'],
             updated=issue['updated_at'],
@@ -318,6 +319,13 @@ class GogsIssueNumber(IssueNumber):
 
     def __repr__(self):
         return '%s' % self.number
+
+
+class GogsIssueState(IssueState):
+    """Gogs IssueState implementation."""
+
+    def __init__(self, state):
+        super().__init__(state, {'closed': 'red', 'open': 'green'}[state])
 
 
 class GogsIssueComment(IssueComment):

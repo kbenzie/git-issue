@@ -2,13 +2,14 @@
 
 from __future__ import print_function
 
-from builtins import super
+from builtins import str, super
 
 import arrow
 from git_issue import GitIssueError
 from git_issue.service import (Issue, IssueComment, IssueEvent, IssueNumber,
-                               Label, Milestone, Service, User, get_protocol,
-                               get_repo_owner_name, get_resource, get_token)
+                               IssueState, Label, Milestone, Service, User,
+                               get_protocol, get_repo_owner_name, get_resource,
+                               get_token)
 from past.builtins import basestring
 from requests import get, patch, post
 from requests.auth import HTTPBasicAuth
@@ -151,7 +152,7 @@ class GitHubIssue(Issue):
             GitHubIssueNumber(issue),
             issue['title'],
             issue['body'],
-            issue['state'],
+            GitHubIssueState(issue['state']),
             GitHubUser(issue['user']),
             issue['created_at'],
             updated=issue['updated_at'],
@@ -278,6 +279,13 @@ class GitHubIssueNumber(IssueNumber):
 
     def __repr__(self):
         return '%s' % self.number
+
+
+class GitHubIssueState(IssueState):
+    """GitHub IssueState implementation."""
+
+    def __init__(self, state):
+        super().__init__(state, {'open': 'green', 'closed': 'red'}[state])
 
 
 class GitHubIssueEvent(IssueEvent):

@@ -133,8 +133,8 @@ def get_token(name):
         token = check_output(
             ['git', 'config', '--get', 'issue.%s.token' % name]).strip()
     except CalledProcessError:
-        raise GitIssueError('failed to get Gogs API token, specify using:\n'
-                            'git config issue.Gogs.token <token>')
+        raise GitIssueError('failed to get {0} API token, specify using:\n'
+                            'git config issue.{0}.token <token>'.format(name))
     return token
 
 
@@ -270,10 +270,8 @@ class Issue(with_metaclass(ABCMeta)):
         if not isinstance(body, basestring):
             raise ValueError('body must be a string')
         self.body = body
-        if not isinstance(state,
-                          basestring) or state not in ['open', 'closed']:
-            raise ValueError(
-                'state must be string and one of "open" or "closed"')
+        if not isinstance(state, IssueState):
+            raise ValueError('state must be an instance of IssueState')
         self.state = state
         if not isinstance(author, User):
             raise ValueError('author must be a subclass of User')
@@ -411,6 +409,21 @@ class IssueNumber(with_metaclass(ABCMeta)):
     @abstractmethod
     def __repr__(self):
         raise NotImplementedError
+
+
+class IssueState(with_metaclass(ABCMeta)):
+    """Generic class to represent an issue state.
+
+    Subclasses must implement ``__str__`` to show the human facing issue state
+    representation, such as ``State``.
+    """
+
+    def __init__(self, name, color):
+        self.name = name
+        self.color = color
+
+    def __str__(self):
+        return '%({})s{}%(reset)s'.format(self.color, self.name)
 
 
 class IssueComment(with_metaclass(ABCMeta)):
@@ -568,7 +581,7 @@ class Milestone(with_metaclass(ABCMeta)):
         :title: Title of the milestone.
         :description: Description of the milestone.
         :due: UTC encoded date the milestone is due.
-        :state: State of the milestone, "open" or "closed".
+        :state: State of the milestone.
     """
 
     def __init__(self, title, description, due, state):
@@ -581,8 +594,4 @@ class Milestone(with_metaclass(ABCMeta)):
         if due and not isinstance(due, basestring):
             raise ValueError('due must be a UTC encoded date string')
         self.due = due
-        if not isinstance(state,
-                          basestring) or state not in ['open', 'closed']:
-            raise ValueError(
-                'state must be a string and one of "open" or "closed"')
         self.state = state

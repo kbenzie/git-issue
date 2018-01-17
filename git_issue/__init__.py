@@ -12,7 +12,11 @@ class GitIssueError(Exception):
 
     def __init__(self, message):
         if isinstance(message, Response):
-            super().__init__('%s %s' % (message.status_code, message.reason))
+            if message.status_code == 404:
+                super().__init__('issue not found')
+            else:
+                super().__init__('%s %s' %
+                                 (message.status_code, message.reason))
         else:
             super().__init__(message)
 

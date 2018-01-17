@@ -2,14 +2,14 @@
 
 from __future__ import print_function
 
-from builtins import super
+from builtins import str, super
 from re import findall
 
 from arrow import utcnow
 from git_issue import GitIssueError
-from git_issue.service import (Issue, IssueComment, IssueEvent, IssueNumber,
-                               Label, Milestone, Service, User, get_protocol,
-                               get_repo_owner_name, get_resource, get_token)
+from git_issue.service import (
+    Issue, IssueComment, IssueEvent, IssueNumber, IssueState, Label, Milestone,
+    Service, User, get_protocol, get_repo_owner_name, get_resource, get_token)
 from past.builtins import basestring
 from requests import get, post, put
 from requests.compat import quote_plus
@@ -46,15 +46,6 @@ def _check_milestone_(milestone):
 
 def _encode_state_(state):
     return {'open': 'opened', 'closed': 'closed', None: None}[state]
-
-
-def _decode_state_(state):
-    return {
-        'opened': 'open',
-        'active': 'open',
-        'closed': 'closed',
-        'reopened': 'open',
-    }[state]
 
 
 class GitLab(Service):
@@ -170,7 +161,7 @@ class GitLabIssue(Issue):
             GitLabIssueNumber(issue),
             issue['title'],
             issue['description'] if issue['description'] else '',
-            _decode_state_(issue['state']),
+            GitLabIssueState(issue['state']),
             GitLabUser(issue['author']),
             issue['created_at'],
             updated=issue['updated_at'],
@@ -291,6 +282,16 @@ class GitLabIssueNumber(IssueNumber):
         return '%r' % self.iid
 
 
+class GitLabIssueState(IssueState):
+    """GitLab IssueState implementation."""
+
+    def __init__(self, state):
+        super().__init__(state, {
+            'opened': 'green',
+            'closed': 'red',
+        }[state])
+
+
 class GitLabIssueComment(IssueComment):
     """GitLab IssueComment implementation."""
 
@@ -312,10 +313,10 @@ class GitLabIssueEvent(IssueEvent):
         body = event['body']
 
         if 'closed' in body:
-            body = '%(red)sclosed%(reset)s'
+            body = '%(red)sClosed%(reset)s'
 
         if 'reopened' in body:
-            body = '%(green)sreopened%(reset)s'
+            body = '%(green)sReopened%(reset)s'
 
         if 'changed title' in body:
             body = body.replace('{+', '').replace('+}', '').replace(
@@ -342,6 +343,10 @@ class GitLabIssueEvent(IssueEvent):
                             body = body.replace(label_iid, '%s' % label)
 
         # TODO: Other events?
+
+        # Capitalize the first character but not the rest of the string,
+        # unicode doesn't support assignment so we need this workaround
+        body = body[:1].capitalize() + body[1:]
 
         super().__init__(body, GitLabUser(event['author']),
                          event['created_at'])
@@ -392,7 +397,6 @@ class GitLabMilestone(Milestone):
                          'state': 'closed',
                          'id': 0}
         super().__init__(milestone['title'], milestone['description'],
-                         milestone['due_date'],
-                         _decode_state_(milestone['state']))
+                         milestone['due_date'], milestone['state'])
         self.id = milestone['id']
         self.iid = milestone['iid']

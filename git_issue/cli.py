@@ -184,7 +184,7 @@ def _pager_(content):
             process.stdin.write(content)
             process.communicate()
         except IOError:
-            print(content)
+            pass
     else:
         print(content)
 
@@ -194,16 +194,11 @@ def _human_date_(date):
 
 
 def _issue_state_(issue):
-    state = '%(color)s%(state)s%(yellow)s' % {
-        'color': {'open': Fore.GREEN,
-                  'closed': Fore.RED}[issue.state],
-        'state': issue.state,
-        'yellow': Fore.YELLOW
-    }
+    state = ('%s' % issue.state) % _colors_(Fore.YELLOW)
     if issue.milestone:
         state += ' %s' % issue.milestone.title
     if len(issue.labels) > 0:
-        state += ' ' + ' '.join([label.__str__() % _colors_(Fore.YELLOW)
+        state += ' ' + ' '.join([('%s' % label) % _colors_(Fore.YELLOW)
                                  for label in issue.labels])
     return state
 
@@ -359,21 +354,23 @@ def show(service, **kwargs):
             if isinstance(item, IssueComment):
                 output += [
                     '',
-                    '%sComment %s%s' % (Fore.YELLOW, item.id, Fore.RESET),
+                    '%sComment %s added %s%s' %
+                    (Fore.YELLOW, item.id, item.created.humanize(),
+                     Fore.RESET),
                     'Author:   %s' % item.author,
-                    'Date:     %s' % _human_date_(item.created),
                     '',
                 ]
                 output += ['    %s' % line for line in item.body.splitlines()]
             elif isinstance(item, IssueEvent):
                 output += [
-                    '', '%(color)s%(actor)s %(event)s %(created)s%(reset)s' % {
+                    '',
+                    '%(color)s%(event)s %(created)s%(reset)s' % {
                         'color': Fore.YELLOW,
-                        'actor': item.actor,
                         'event': item.event % _colors_(Fore.YELLOW),
                         'created': item.created.humanize(),
                         'reset': Fore.RESET,
-                    }
+                    },
+                    'Actor:    %s' % item.actor,
                 ]
     _pager_('\n'.join(output))
     exit(0)

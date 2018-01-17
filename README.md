@@ -174,6 +174,8 @@ Please report any issues on [GitHub][issues].
 
 ## HISTORY
 
+0.3.8 - Support arbitrary issue states.
+
 0.3.7 - Support arbitrary issue events.
 
 0.3.6 - Implement GitLab comment URL.
