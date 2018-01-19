@@ -46,10 +46,12 @@ def get_service():
             from git_issue.github import GitHub
             from git_issue.gitlab import GitLab
             from git_issue.gogs import Gogs
+            from git_issue.jira import JIRA
             return {
                 'GitHub': GitHub,
                 'GitLab': GitLab,
                 'Gogs': Gogs,
+                'JIRA': JIRA,
             }[name]()
         except KeyError:
             raise GitIssueError('invalid issue service: %s' % name)
