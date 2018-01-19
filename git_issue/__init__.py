@@ -2,6 +2,7 @@
 
 from __future__ import print_function
 
+from os import devnull
 from builtins import super
 from subprocess import CalledProcessError, check_output
 from requests import Response
@@ -21,6 +22,17 @@ class GitIssueError(Exception):
             super().__init__(message)
 
 
+def get_config(name):
+    """Get the value of a git config option.
+
+    Arguments:
+        :name: Name of the option to get.
+    """
+    with open(devnull, 'w+b') as DEVNULL:
+        return check_output(
+            ['git', 'config', '--get', name], stderr=DEVNULL).strip()
+
+
 def get_service():
     """Get the configured service object.
 
@@ -28,8 +40,7 @@ def get_service():
         :Service: A subclass implementing the ``Service`` abstract base class.
     """
     try:
-        name = check_output(
-            ['git', 'config', '--get', 'issue.service']).strip()
+        name = get_config('issue.service')
         try:
             # NOTE: Import and add new services here.
             from git_issue.github import GitHub

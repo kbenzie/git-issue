@@ -69,12 +69,15 @@ queries `issue.<service>.token` to gain access to the _service_.
   configured service.
 * _open_, _closed_, _all_:
   The current state of issues to list, if the default is _open_.
+* `--url`:
+  Print the issue URL instead of opening it in the default browser, only
+  available for `git issue browse`.
+* `--oneline`:
+  Print each issue on one line, only available for `git issue list`.
 * `-q`, `--quiet`:
   Suppress displaying issue events, only available for `git issue show`.
 * `--summary`:
   Print issue summary only, only available for `git issue show`.
-* `--oneline`:
-  Print each issue on one line, only available for `git issue list`.
 
 ## SERVICES
 
@@ -173,6 +176,8 @@ activities occurring in your absence.
 Please report any issues on [GitHub][issues].
 
 ## HISTORY
+
+0.3.9 - Cleanup and fixes.
 
 0.3.8 - Support arbitrary issue states.
 

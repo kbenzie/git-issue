@@ -7,9 +7,10 @@ from re import findall
 
 from arrow import utcnow
 from git_issue import GitIssueError
-from git_issue.service import (
-    Issue, IssueComment, IssueEvent, IssueNumber, IssueState, Label, Milestone,
-    Service, User, get_protocol, get_repo_owner_name, get_resource, get_token)
+from git_issue.service import (Issue, IssueComment, IssueEvent, IssueNumber,
+                               IssueState, Label, Milestone, Service, User,
+                               get_protocol, get_repo_owner_name, get_resource,
+                               get_token)
 from past.builtins import basestring
 from requests import get, post, put
 from requests.compat import quote_plus
@@ -97,6 +98,8 @@ class GitLab(Service):
             raise GitIssueError(response)
 
     def issues(self, state):
+        if state not in ['open', 'closed']:
+            raise GitIssueError('invalid issue state: %s' % state)
         issues = []
         try:
             # GitLab returns a list of strings for labels, cache labels so we
@@ -124,6 +127,10 @@ class GitLab(Service):
                 else:
                     raise GitIssueError(response)
         return reversed(sorted(issues))
+
+    def states(self):
+        return [GitLabIssueState('open'), GitLabIssueState('closed'),
+                GitLabIssueState('all')]
 
     def user_search(self, keyword):
         response = get(self.users_url,
@@ -168,8 +175,8 @@ class GitLabIssue(Issue):
             assignee=GitLabUser(issue['assignee'])
             if issue['assignee'] else None,
             labels=[GitLabLabel(label) for label in issue['labels']],
-            milestone=GitLabMilestone(issue['milestone'])
-            if issue['milestone'] else None,
+            milestones=[GitLabMilestone(issue['milestone'])]
+            if issue['milestone'] else [],
             num_comments=issue['user_notes_count'])
         self.issue_url = '%s/%s' % (url, issue['iid'])
         self.notes_url = '%s/notes' % self.issue_url
@@ -287,8 +294,10 @@ class GitLabIssueState(IssueState):
 
     def __init__(self, state):
         super().__init__(state, {
+            'open': 'green',
             'opened': 'green',
             'closed': 'red',
+            'all': 'reset',
         }[state])
 
 
