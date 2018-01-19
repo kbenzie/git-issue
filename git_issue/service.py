@@ -4,14 +4,29 @@ from __future__ import print_function
 
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
-from os import devnull
-from subprocess import CalledProcessError, check_output
+from subprocess import CalledProcessError
 
 import arrow
 from future.utils import with_metaclass
-from git_issue import GitIssueError
+from git_issue import GitIssueError, get_config
 from giturlparse import parse
 from past.builtins import basestring
+
+
+def get_url(name):
+    """Get the service URL.
+
+    Arguments:
+        :name: Name of the service.
+
+    Returns:
+        :str: If ``issue.<service>.url`` is set.
+        :None: If ``issue.<service>.url`` is not set.
+    """
+    try:
+        return get_config('issue.%s.url' % name)
+    except CalledProcessError:
+        pass
 
 
 def get_protocol(name):
@@ -28,22 +43,16 @@ def get_protocol(name):
         :str: ``'https'`` or ``'http'`` depending on the value of
         ``issue.<service>.https`` config setting.
     """
-    with open(devnull, 'w+b') as DEVNULL:
-        try:
-            url = check_output(
-                ['git', 'config', '--get', 'issue.%s.url' % name],
-                stderr=DEVNULL).strip()
-            _check_service_url_(name, url)
-            return parse(url).protocol
-        except CalledProcessError:
-            try:
-                use_https = check_output(
-                    ['git', 'config', '--get', 'issue.%s.https' % name],
-                    stderr=DEVNULL).strip().lower()
-                if use_https == '0' or use_https == 'false':
-                    return 'http'
-            except CalledProcessError:
-                pass
+    url = get_url(name)
+    if url:
+        _check_service_url_(name, url)
+        return parse(url).protocol
+    try:
+        use_https = get_config('issue.%s.https' % name)
+        if use_https == '0' or use_https == 'false':
+            return 'http'
+    except CalledProcessError:
+        pass
     return 'https'
 
 
@@ -53,14 +62,11 @@ def get_remote(name):
     Arguments:
         :name: Name of the service.
     """
-    with open(devnull, 'w+b') as DEVNULL:
-        try:
-            remote = check_output(
-                ['git', 'config', '--get', 'issue.%s.remote' % name],
-                stderr=DEVNULL).strip()
-        except CalledProcessError:
-            remote = 'origin'
-        return remote
+    try:
+        remote = get_config('issue.%s.remote' % name)
+    except CalledProcessError:
+        remote = 'origin'
+    return remote
 
 
 def _check_service_url_(name, url):
@@ -78,22 +84,16 @@ def get_resource(name):
     Raises:
         :GitIssueError: If the HTTP URL could not be determined.
     """
-    with open(devnull, 'w+b') as DEVNULL:
+    url = get_url(name)
+    if url:
+        _check_service_url_(name, url)
+    else:
         try:
-            url = check_output(
-                ['git', 'config', '--get', 'issue.%s.url' % name],
-                stderr=DEVNULL).strip()
-            _check_service_url_(name, url)
+            url = get_config('remote.%s.url' % get_remote(name))
         except CalledProcessError:
-            try:
-                url = check_output(
-                    ['git', 'config', '--get',
-                     'remote.%s.url' % get_remote(name)],
-                    stderr=DEVNULL).strip()
-            except CalledProcessError:
-                raise GitIssueError(
-                    'failed to determine service HTTP URL, specify using:\n'
-                    'git config issue.%s.url <url>' % name)
+            raise GitIssueError(
+                'failed to determine service HTTP URL, specify using:\n'
+                'git config issue.%s.url <url>' % name)
     return parse(url).resource
 
 
@@ -103,22 +103,16 @@ def get_repo_owner_name(name):
     Arguments:
         :name: Name of the service.
     """
-    with open(devnull, 'w+b') as DEVNULL:
+    try:
+        url = get_config('issue.%s.url' % name)
+        _check_service_url_(name, url)
+    except CalledProcessError:
         try:
-            url = check_output(
-                ['git', 'config', '--get', 'issue.%s.url' % name],
-                stderr=DEVNULL).strip()
-            _check_service_url_(name, url)
+            url = get_config('remote.%s.url' % get_remote(name))
         except CalledProcessError:
-            try:
-                url = check_output(
-                    ['git', 'config', '--null', '--get',
-                     'remote.%s.url' % get_remote(name)],
-                    stderr=DEVNULL).strip()
-            except CalledProcessError:
-                raise GitIssueError(
-                    'failed to determine repository HTTP URL, specify using:\n'
-                    'git config issue.%s.url <url>' % name)
+            raise GitIssueError(
+                'failed to determine repository HTTP URL, specify using:\n'
+                'git config issue.%s.url <url>' % name)
     remote = parse(url)
     return '%s/%s' % (remote.owner, remote.name)
 
@@ -130,8 +124,7 @@ def get_token(name):
         :name: Name of the service.
     """
     try:
-        token = check_output(
-            ['git', 'config', '--get', 'issue.%s.token' % name]).strip()
+        token = get_config('issue.%s.token' % name)
     except CalledProcessError:
         raise GitIssueError('failed to get {0} API token, specify using:\n'
                             'git config issue.{0}.token <token>'.format(name))
@@ -195,6 +188,18 @@ class Service(with_metaclass(ABCMeta)):
 
         Returns:
             :list: Of ``Issue`` objects.
+
+        Raises:
+            :GitIssueError: Containing message about the error.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def states(self):
+        """Get a list of issue states.
+
+        Returns:
+            :list: Of ``IssueState`` objects.
 
         Raises:
             :GitIssueError: Containing message about the error.
@@ -293,9 +298,13 @@ class Issue(with_metaclass(ABCMeta)):
                         'labels must be a list of subclasses of Label')
         else:
             raise ValueError('labels must be a list of subclasses of Label')
-        self.milestone = kwargs.pop('milestone', None)
-        if self.milestone and not isinstance(self.milestone, Milestone):
-            raise ValueError('milestone must be a subclass of Milestone')
+        self.milestones = kwargs.pop('milestones', None)
+        if self.milestones:
+            if (not isinstance(self.milestones, list) or
+                    any([not isinstance(milestone, Milestone)
+                         for milestone in self.milestones])):
+                raise ValueError(
+                    'milestones must be a list of subclasses of Milestone')
         self.num_comments = kwargs.pop('num_comments', 0)
         if self.num_comments and not isinstance(self.num_comments, int):
             raise ValueError('comments must be an integer')
@@ -359,6 +368,8 @@ class Issue(with_metaclass(ABCMeta)):
             :GitIssueError: Containing message about the error.
         """
         raise NotImplementedError
+
+    # TODO: Add move to support moving an issue on issue boards
 
     @abstractmethod
     def close(self, **kwargs):

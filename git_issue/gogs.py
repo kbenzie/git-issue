@@ -92,8 +92,8 @@ class Gogs(Service):
         #   ?type=all&sort=&state=closed&labels=0&milestone=0&assignee=0
         # state seems to be the only one which works for api/v1.
         if state not in ['open', 'closed', 'all']:
-            raise ValueError(
-                'state must be a string and one of "open", "closed", or "all"')
+            raise GitIssueError(
+                'state must be one of "open", "closed", or "all"')
         issues = []
         # Gogs does't not support 'all' so we must iterate over 'open' and
         # 'closed' states to get all issues.
@@ -114,6 +114,10 @@ class Gogs(Service):
                 else:
                     raise GitIssueError(response)
         return reversed(sorted(issues))
+
+    def states(self):
+        return [GogsIssueState('open'), GogsIssueState('closed'),
+                GogsIssueState('all')]
 
     def labels(self):
         response = get('%s/labels' % self.repos_url, headers=self.header)
@@ -160,8 +164,8 @@ class GogsIssue(Issue):
             assignee=GogsUser(issue['assignee'])
             if issue['assignee'] else None,
             labels=[GogsLabel(label) for label in issue['labels']],
-            milestone=GogsMilestone(issue['milestone'])
-            if issue['milestone'] else None,
+            milestones=[GogsMilestone(issue['milestone'])]
+            if issue['milestone'] else [],
             num_comments=issue['comments'])
         self.repos_url = repos_url
         self.issues_url = '%s/issues' % self.repos_url
@@ -325,7 +329,9 @@ class GogsIssueState(IssueState):
     """Gogs IssueState implementation."""
 
     def __init__(self, state):
-        super().__init__(state, {'closed': 'red', 'open': 'green'}[state])
+        super().__init__(state, {'closed': 'red',
+                                 'open': 'green',
+                                 'all': 'reset'}[state])
 
 
 class GogsIssueComment(IssueComment):

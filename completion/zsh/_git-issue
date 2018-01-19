@@ -83,7 +83,7 @@ _git-issue() {
         (list)
           _arguments -S \
             '--oneline[print each issue on one line]' \
-            '1: :(open closed all)' \
+            '1: :(( "${(@f)$(git-issue complete states)}" ))' \
             && ret=0
           ;;
 

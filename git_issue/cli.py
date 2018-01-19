@@ -12,7 +12,7 @@ from sys import stderr, stdout
 from webbrowser import open_new_tab
 
 from colorama import Fore
-from git_issue import GitIssueError, get_service
+from git_issue import GitIssueError, get_config, get_service
 from git_issue.service import IssueComment, IssueEvent
 from pick import pick
 from requests import ConnectionError
@@ -158,15 +158,17 @@ def _check_milestone_(service, milestone):
 
 def _editor_(template='\n'):
     try:
-        editor = check_output(
-            ['git', 'config', '--get', 'core.editor']).strip()
+        editor = get_config('core.editor')
     except CalledProcessError:
         editor = environ.get('EDITOR', None)
     if not editor:
+        # TODO: Check if vim/vi/nano exist and use that
+        # TODO: Use the default editor on Windows
         editor = 'vi'
     path = join(_git_dir_(), 'ISSUEMSG')
     with open(path, 'w') as issuemsg:
         issuemsg.write(template)
+    # TODO: Support configurable filetype
     check_call(
         [editor, '+setfiletype markdown' if 'vim' in editor else '', path])
     with open(path, 'r') as issuemsg:
@@ -181,7 +183,7 @@ def _pager_(content):
     if stdout.isatty:
         process = Popen(['less', '-F', '-R', '-X', '-K'], stdin=PIPE)
         try:
-            process.stdin.write(content)
+            process.stdin.write(content.encode('utf-8'))
             process.communicate()
         except IOError:
             pass
@@ -195,8 +197,9 @@ def _human_date_(date):
 
 def _issue_state_(issue):
     state = ('%s' % issue.state) % _colors_(Fore.YELLOW)
-    if issue.milestone:
-        state += ' %s' % issue.milestone.title
+    if len(issue.milestones) > 0:
+        state += ' ' + ' '.join(
+            ['%s' % milestone.title for milestone in issue.milestones])
     if len(issue.labels) > 0:
         state += ' ' + ' '.join([('%s' % label) % _colors_(Fore.YELLOW)
                                  for label in issue.labels])
@@ -412,8 +415,7 @@ def complete(service, **kwargs):
     """Provide completions."""
     complete_type = kwargs.pop('type')
     if complete_type == 'issues':
-        state = kwargs.pop('state', 'open')
-        issues = service.issues(state)
+        issues = service.issues(kwargs.pop('state', 'open'))
         if 'zsh' in environ['SHELL']:
             # In zsh display the issue title as the description
             output = '\n'.join(['%r:%s' % (issue.number, issue.title)
@@ -426,6 +428,8 @@ def complete(service, **kwargs):
     if complete_type == 'milestones':
         output = '\n'.join(
             [milestone.title for milestone in service.milestones()])
+    if complete_type == 'states':
+        output = '\n'.join([state.name for state in service.states()])
     print(output, end='')
     exit(0)
 
@@ -483,11 +487,7 @@ def main():
         list_parser = subparsers.add_parser('list')
         list_parser.set_defaults(_command_=list)
         list_parser.add_argument('--oneline', action='store_true')
-        list_parser.add_argument(
-            'state',
-            choices=['open', 'closed', 'all'],
-            default='open',
-            nargs='?')
+        list_parser.add_argument('state', default='open', nargs='?')
 
         browse_parser = subparsers.add_parser('browse')
         browse_parser.set_defaults(_command_=browse)
@@ -497,7 +497,7 @@ def main():
         complete_parser = subparsers.add_parser('complete')
         complete_parser.set_defaults(_command_=complete)
         complete_parser.add_argument(
-            'type', choices=['issues', 'labels', 'milestones'])
+            'type', choices=['issues', 'labels', 'milestones', 'states'])
         complete_parser.add_argument(
             '--state', choices=['all', 'open', 'closed'])
 
@@ -512,8 +512,7 @@ def main():
     except ConnectionError as error:
         if debug:
             _print_exception_()
-        service_name = check_output(
-            ['git', 'config', '--get', 'issue.service']).strip()
+        service_name = get_config('issue.service')
         _error_('authentication failed, check that:'
                 '\n* issue.{0}.token is correct'
                 '\n* issue.{0}.url is correct, if applicable'

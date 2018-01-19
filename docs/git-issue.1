@@ -105,16 +105,20 @@ The issue number to manage, the actual representation may change dependant on co
 The current state of issues to list, if the default is \fIopen\fR\.
 .
 .TP
+\fB\-\-url\fR
+Print the issue URL instead of opening it in the default browser, only available for \fBgit issue browse\fR\.
+.
+.TP
+\fB\-\-oneline\fR
+Print each issue on one line, only available for \fBgit issue list\fR\.
+.
+.TP
 \fB\-q\fR, \fB\-\-quiet\fR
 Suppress displaying issue events, only available for \fBgit issue show\fR\.
 .
 .TP
 \fB\-\-summary\fR
 Print issue summary only, only available for \fBgit issue show\fR\.
-.
-.TP
-\fB\-\-oneline\fR
-Print each issue on one line, only available for \fBgit issue list\fR\.
 .
 .SH "SERVICES"
 .
@@ -201,6 +205,9 @@ Any other error codes are propagated from the underlying command, i\.e\. git\-co
 Please report any issues on GitHub \fIhttps://github\.com/kbenzie/git\-issue/issues\fR\.
 .
 .SH "HISTORY"
+0\.3\.9 \- Cleanup and fixes\.
+.
+.P
 0\.3\.8 \- Support arbitrary issue states\.
 .
 .P

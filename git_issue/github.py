@@ -95,6 +95,10 @@ class GitHub(Service):
         raise GitIssueError('could not find issue: %s' % number)
 
     def issues(self, state):
+        states = self.states()
+        if state not in [s.name for s in states]:
+            raise GitIssueError('state must be one of %s' %
+                                ', '.join(['"%s"' % s.name for s in states]))
         issues = []
         next_url = self.issues_url
         while next_url:
@@ -111,6 +115,10 @@ class GitHub(Service):
             else:
                 raise GitIssueError(response)
         return issues
+
+    def states(self):
+        return [GitHubIssueState('open'), GitHubIssueState('closed'),
+                GitHubIssueState('all')]
 
     def user_search(self, keyword):
         response = get('%s/search/users' % self.api_url,
@@ -159,8 +167,8 @@ class GitHubIssue(Issue):
             assignee=GitHubUser(issue['assignee'])
             if issue['assignee'] else None,
             labels=[GitHubLabel(label) for label in issue['labels']],
-            milestone=GitHubMilestone(issue['milestone'])
-            if issue['milestone'] else None,
+            milestones=[GitHubMilestone(issue['milestone'])]
+            if issue['milestone'] else [],
             num_comments=issue['comments'])
         self.auth = auth
         self.headers = headers
@@ -218,7 +226,7 @@ class GitHubIssue(Issue):
         milestone = _check_milestone_(kwargs.pop('milestone', None))
         if milestone:
             data['milestone'] = None
-            if 'none' != milestone.title:
+            if milestone.title != 'none':
                 data['milestone'] = milestone.number
         # labels (array of strings) Labels to associate with this issue.
         labels = _check_labels_(kwargs.pop('labels', []))
@@ -285,7 +293,9 @@ class GitHubIssueState(IssueState):
     """GitHub IssueState implementation."""
 
     def __init__(self, state):
-        super().__init__(state, {'open': 'green', 'closed': 'red'}[state])
+        super().__init__(state, {'open': 'green',
+                                 'closed': 'red',
+                                 'all': 'reset'}[state])
 
 
 class GitHubIssueEvent(IssueEvent):
