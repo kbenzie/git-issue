@@ -178,6 +178,8 @@ Please report any issues on [GitHub][issues].
 
 ## HISTORY
 
+0.4.1 - Fix issue state check.
+
 0.4.0 - Support git-config(1) shell commands.
 
 0.3.9 - Cleanup and fixes.

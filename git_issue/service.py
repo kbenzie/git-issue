@@ -437,6 +437,12 @@ class IssueState(with_metaclass(ABCMeta)):
     def __str__(self):
         return '%({})s{}%(reset)s'.format(self.color, self.name)
 
+    def __eq__(self, state):
+        return self.name == state
+
+    def __ne__(self, state):
+        return self.name != state
+
 
 class IssueComment(with_metaclass(ABCMeta)):
     """Generic class to represent an issue comment.
