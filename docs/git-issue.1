@@ -194,6 +194,20 @@ Any other error codes are propagated from the underlying command, i\.e\. git\-co
 .SH "SECURITY CONSIDERATIONS"
 \fBgit\-issue\fR relies on service API tokens to be stored in git\-config(1) files, ensure that these files have appropriate permissions and that the system is secure (password protected) when not attended to avoid data loss or destructive activities occurring in your absence\.
 .
+.P
+To ensure that service API tokens are not stored as plane text in git\-config(1) files it is \fIhighly recommended\fR to store them in a safe place and use a shell command to retrieve the information when required\. For example if a Gogs API token is encrypted with gpg(1) the following git\-config(1) entry could be used\.
+.
+.IP "" 4
+.
+.nf
+
+[issue "Gogs"]
+    token = !gpg \-\-decrypt gogs\-token\.gpg
+.
+.fi
+.
+.IP "" 0
+.
 .SH "BUGS"
 .
 .IP "\(bu" 4
@@ -205,6 +219,9 @@ Any other error codes are propagated from the underlying command, i\.e\. git\-co
 Please report any issues on GitHub \fIhttps://github\.com/kbenzie/git\-issue/issues\fR\.
 .
 .SH "HISTORY"
+0\.4\.2 \- Update security considerations\.
+.
+.P
 0\.4\.1 \- Fix issue state check\.
 .
 .P
@@ -298,4 +315,4 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT\. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE\.
 .
 .SH "SEE ALSO"
-git(1) git\-config(1) git\-commit(1) less(1) zsh(1) zshbuiltins(1) zshcompsys(1)
+git(1) git\-config(1) git\-commit(1) gpg(1) less(1) zsh(1) zshbuiltins(1) zshcompsys(1)

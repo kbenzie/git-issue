@@ -169,6 +169,16 @@ ensure that these files have appropriate permissions and that the system is
 secure (password protected) when not attended to avoid data loss or destructive
 activities occurring in your absence.
 
+To ensure that service API tokens are not stored as plane text in git-config(1)
+files it is _highly recommended_ to store them in a safe place and use a shell
+command to retrieve the information when required. For example if a Gogs API
+token is encrypted with gpg(1) the following git-config(1) entry could be used.
+
+```
+[issue "Gogs"]
+	token = !gpg --decrypt gogs-token.gpg
+```
+
 ## BUGS
 
 * `Gogs` does not reliably support repeatedly editing _labels_, a warning will
@@ -177,6 +187,8 @@ activities occurring in your absence.
 Please report any issues on [GitHub][issues].
 
 ## HISTORY
+
+0.4.2 - Update security considerations.
 
 0.4.1 - Fix issue state check.
 
@@ -257,7 +269,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ## SEE ALSO
 
-git(1) git-config(1) git-commit(1) less(1) zsh(1) zshbuiltins(1) zshcompsys(1)
+git(1) git-config(1) git-commit(1) gpg(1) less(1) zsh(1) zshbuiltins(1)
+zshcompsys(1)
 
 [github-token]: https://github.com/settings/tokens
 [markdown]: https://daringfireball.net/projects/markdown/syntax

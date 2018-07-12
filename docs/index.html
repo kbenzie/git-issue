@@ -239,6 +239,15 @@ ensure that these files have appropriate permissions and that the system is
 secure (password protected) when not attended to avoid data loss or destructive
 activities occurring in your absence.</p>
 
+<p>To ensure that service API tokens are not stored as plane text in <a class="man-ref" href="https://git-scm.com/docs/git-config">git-config<span class="s">(1)</span></a>
+files it is <em>highly recommended</em> to store them in a safe place and use a shell
+command to retrieve the information when required. For example if a Gogs API
+token is encrypted with <a class="man-ref" href="https://linux.die.net/man/1/gpg">gpg<span class="s">(1)</span></a> the following <a class="man-ref" href="https://git-scm.com/docs/git-config">git-config<span class="s">(1)</span></a> entry could be used.</p>
+
+<pre><code>[issue "Gogs"]
+    token = !gpg --decrypt gogs-token.gpg
+</code></pre>
+
 <h2 id="BUGS">BUGS</h2>
 
 <ul>
@@ -250,6 +259,8 @@ be emitted if this is attempted.</li>
 <p>Please report any issues on <a href="https://github.com/kbenzie/git-issue/issues">GitHub</a>.</p>
 
 <h2 id="HISTORY">HISTORY</h2>
+
+<p>0.4.2 - Update security considerations.</p>
 
 <p>0.4.1 - Fix issue state check.</p>
 
@@ -330,7 +341,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</p>
 
 <h2 id="SEE-ALSO">SEE ALSO</h2>
 
-<p><a class="man-ref" href="https://git-scm.com/docs/git">git<span class="s">(1)</span></a> <a class="man-ref" href="https://git-scm.com/docs/git-config">git-config<span class="s">(1)</span></a> <a class="man-ref" href="https://git-scm.com/docs/git-commit">git-commit<span class="s">(1)</span></a> <a class="man-ref" href="https://linux.die.net/man/1/less">less<span class="s">(1)</span></a> <a class="man-ref" href="https://linux.die.net/man/1/zsh">zsh<span class="s">(1)</span></a> <a class="man-ref" href="https://linux.die.net/man/1/zshbuiltins">zshbuiltins<span class="s">(1)</span></a> <a class="man-ref" href="https://linux.die.net/man/1/zshcompsys">zshcompsys<span class="s">(1)</span></a></p>
+<p><a class="man-ref" href="https://git-scm.com/docs/git">git<span class="s">(1)</span></a> <a class="man-ref" href="https://git-scm.com/docs/git-config">git-config<span class="s">(1)</span></a> <a class="man-ref" href="https://git-scm.com/docs/git-commit">git-commit<span class="s">(1)</span></a> <a class="man-ref" href="https://linux.die.net/man/1/gpg">gpg<span class="s">(1)</span></a> <a class="man-ref" href="https://linux.die.net/man/1/less">less<span class="s">(1)</span></a> <a class="man-ref" href="https://linux.die.net/man/1/zsh">zsh<span class="s">(1)</span></a> <a class="man-ref" href="https://linux.die.net/man/1/zshbuiltins">zshbuiltins<span class="s">(1)</span></a>
+<a class="man-ref" href="https://linux.die.net/man/1/zshcompsys">zshcompsys<span class="s">(1)</span></a></p>
 
 
   <ol class='man-decor man-foot man foot'>

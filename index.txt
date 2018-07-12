@@ -1,6 +1,7 @@
 git(1) https://git-scm.com/docs/git
 git-commit(1) https://git-scm.com/docs/git-commit
 git-config(1) https://git-scm.com/docs/git-config
+gpg(1) https://linux.die.net/man/1/gpg
 less(1) https://linux.die.net/man/1/less
 vi(1) https://linux.die.net/man/1/vi
 zsh(1) https://linux.die.net/man/1/zsh
