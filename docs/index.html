@@ -178,7 +178,8 @@ between the <em>title</em> and <em>body</em> of the issue.</p>
 <h2 id="ENVIRONMENT">ENVIRONMENT</h2>
 
 <p><code>git-issue</code> takes advantage of <a class="man-ref" href="https://git-scm.com/docs/git-config">git-config<span class="s">(1)</span></a> to store information which it
-requires to function.</p>
+requires to function. If a <a class="man-ref" href="https://git-scm.com/docs/git-config">git-config<span class="s">(1)</span></a> entry is prefixed with <code>!</code> it will be
+treated as a shell command, when executed should result in the desired value.</p>
 
 <dl>
 <dt><em>git config</em> <code>issue.service</code> <em>service</em></dt><dd>Name of the service which provides the remote issue tracker, e.g. <code>Gogs</code>.</dd>
@@ -249,6 +250,8 @@ be emitted if this is attempted.</li>
 <p>Please report any issues on <a href="https://github.com/kbenzie/git-issue/issues">GitHub</a>.</p>
 
 <h2 id="HISTORY">HISTORY</h2>
+
+<p>0.4.0 - Support <a class="man-ref" href="https://git-scm.com/docs/git-config">git-config<span class="s">(1)</span></a> shell commands.</p>
 
 <p>0.3.9 - Cleanup and fixes.</p>
 

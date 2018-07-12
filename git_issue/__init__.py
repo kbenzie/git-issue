@@ -4,7 +4,7 @@ from __future__ import print_function
 
 from os import devnull
 from builtins import super
-from subprocess import CalledProcessError, check_output
+from subprocess import CalledProcessError, Popen, PIPE, check_output
 from requests import Response
 
 
@@ -29,8 +29,17 @@ def get_config(name):
         :name: Name of the option to get.
     """
     with open(devnull, 'w+b') as DEVNULL:
-        return check_output(
+        config = check_output(
             ['git', 'config', '--get', name], stderr=DEVNULL).strip()
+        if config.startswith('!'):
+            process = Popen(
+                config[1:], shell=True, stdout=PIPE, stderr=PIPE)
+            stdout, stderr = process.communicate()
+            if process.returncode != 0:
+                raise GitIssueError('%s = %s\n%s' %
+                                    (name, config, stderr.strip()))
+            config = stdout.strip()
+        return config
 
 
 def get_service():

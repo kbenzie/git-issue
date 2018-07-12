@@ -13,14 +13,20 @@ if system() != 'Windows':
 
 setup(
     name='git-issue',
-    version='0.3.9',
+    version='0.4.0',
     description='Manage remote Git issue trackers',
     url='https://code.infektor.net/benie/git-issue',
     author='Kenneth Benzie',
     autho_email='benie@infektor.net',
     license='MIT',
     classifiers=[
-        'Development Status :: 1 - Planning',
+        'Development Status :: 2 - Pre-Alpha',
+        'Environment :: Console',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: MIT License',
+        'Topic :: Internet :: WWW/HTTP',
+        'Topic :: Software Development :: Bug Tracking',
+        'Topic :: Software Development :: Version Control :: Git',
     ],
     keywords='git issue track gogs',
     packages=find_packages(exclude=['man']),

@@ -8,9 +8,10 @@ from subprocess import CalledProcessError
 
 import arrow
 from future.utils import with_metaclass
-from git_issue import GitIssueError, get_config
 from giturlparse import parse
 from past.builtins import basestring
+
+from git_issue import GitIssueError, get_config
 
 
 def get_url(name):

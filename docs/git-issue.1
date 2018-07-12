@@ -138,7 +138,7 @@ To enable this service set \fBissue\.service\fR to \fBGogs\fR and \fBissue\.Gogs
 The syntax of editor message is dependant on the service providing the issue tracker, by default this will be Markdown \fIhttps://daringfireball\.net/projects/markdown/syntax\fR or some variation of it i\.e\. GitHub Flavoured Markdown \fIhttps://github\.github\.com/gfm/\fR\. \fBgit\-issue\fR generally does not process the text input by the user, with one exception; when editing a message in the editor the second line in the file will be ignored as a separator between the \fItitle\fR and \fIbody\fR of the issue\.
 .
 .SH "ENVIRONMENT"
-\fBgit\-issue\fR takes advantage of git\-config(1) to store information which it requires to function\.
+\fBgit\-issue\fR takes advantage of git\-config(1) to store information which it requires to function\. If a git\-config(1) entry is prefixed with \fB!\fR it will be treated as a shell command, when executed should result in the desired value\.
 .
 .TP
 \fIgit config\fR \fBissue\.service\fR \fIservice\fR
@@ -205,6 +205,9 @@ Any other error codes are propagated from the underlying command, i\.e\. git\-co
 Please report any issues on GitHub \fIhttps://github\.com/kbenzie/git\-issue/issues\fR\.
 .
 .SH "HISTORY"
+0\.4\.0 \- Support git\-config(1) shell commands\.
+.
+.P
 0\.3\.9 \- Cleanup and fixes\.
 .
 .P
