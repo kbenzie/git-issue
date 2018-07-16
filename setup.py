@@ -17,7 +17,7 @@ setup(
     description='Manage remote Git issue trackers',
     url='https://code.infektor.net/benie/git-issue',
     author='Kenneth Benzie',
-    autho_email='benie@infektor.net',
+    author_email='benie@infektor.net',
     license='MIT',
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
