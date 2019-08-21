@@ -188,6 +188,8 @@ Please report any issues on [GitHub][issues].
 
 ## HISTORY
 
+0.4.3 - Silence arrow.get() behaviour change warning.
+
 0.4.2 - Update security considerations.
 
 0.4.1 - Fix issue state check.

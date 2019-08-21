@@ -11,11 +11,13 @@ from subprocess import (PIPE, CalledProcessError, Popen, check_call,
 from sys import stderr, stdout
 from webbrowser import open_new_tab
 
+from arrow.factory import ArrowParseWarning
 from colorama import Fore
-from git_issue import GitIssueError, get_config, get_service
-from git_issue.service import IssueComment, IssueEvent
 from pick import pick
 from requests import ConnectionError
+
+from git_issue import GitIssueError, get_config, get_service
+from git_issue.service import IssueComment, IssueEvent
 
 
 def _warn_(message):
@@ -437,6 +439,7 @@ def complete(service, **kwargs):
 def main():
     """Main entry point."""
     try:
+        warnings.simplefilter('ignore', ArrowParseWarning)
         warnings.showwarning = lambda *args: _warn_(args[0].message)
 
         parser = ArgumentParser()
