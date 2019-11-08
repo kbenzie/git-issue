@@ -8,10 +8,9 @@ from os import environ, remove
 from os.path import join
 from subprocess import (PIPE, CalledProcessError, Popen, check_call,
                         check_output)
-from sys import stderr, stdout
+from sys import exit, stderr, stdout
 from webbrowser import open_new_tab
 
-from arrow.factory import ArrowParseWarning
 from colorama import Fore
 from pick import pick
 from requests import ConnectionError
@@ -50,7 +49,7 @@ def _print_exception_():
 
 
 def _git_dir_():
-    return check_output(['git', 'rev-parse', '--git-dir']).strip()
+    return check_output(['git', 'rev-parse', '--git-dir']).decode().strip()
 
 
 def _colors_(reset):
@@ -123,11 +122,11 @@ def _hex_to_term_(color):
 def _pick_user_(service, keyword):
     if keyword:
         users = service.user_search(keyword)
-        if len(users) > 1:
-            user, _ = pick([
-                u'%s' % user for user in users
-            ], 'Choose from multiple matches for: %s (select then press Enter)'
-                           % keyword)
+        if users:
+            message = '\
+Choose from multiple matches for: {} (select then press Enter)'
+            user, _ = pick([u'%s' % user for user in users],
+                           message.format(keyword))
             return user
         else:
             return users[0]
@@ -439,7 +438,6 @@ def complete(service, **kwargs):
 def main():
     """Main entry point."""
     try:
-        warnings.simplefilter('ignore', ArrowParseWarning)
         warnings.showwarning = lambda *args: _warn_(args[0].message)
 
         parser = ArgumentParser()
@@ -512,7 +510,7 @@ def main():
         if debug:
             _print_exception_()
         _error_(error.message)
-    except ConnectionError as error:
+    except ConnectionError:
         if debug:
             _print_exception_()
         service_name = get_config('issue.service')

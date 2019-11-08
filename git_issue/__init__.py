@@ -3,23 +3,21 @@
 from __future__ import print_function
 
 from os import devnull
-from builtins import super
-from subprocess import CalledProcessError, Popen, PIPE, check_output
+from subprocess import PIPE, CalledProcessError, Popen, check_output
+
 from requests import Response
 
 
 class GitIssueError(Exception):
     """Exception class for git_issue."""
-
     def __init__(self, message):
         if isinstance(message, Response):
             if message.status_code == 404:
-                super().__init__('issue not found')
+                self.message = 'issue not found'
             else:
-                super().__init__('%s %s' %
-                                 (message.status_code, message.reason))
+                self.message = '%s %s' % (message.status_code, message.reason)
         else:
-            super().__init__(message)
+            self.message = message
 
 
 def get_config(name):
@@ -29,16 +27,15 @@ def get_config(name):
         :name: Name of the option to get.
     """
     with open(devnull, 'w+b') as DEVNULL:
-        config = check_output(
-            ['git', 'config', '--get', name], stderr=DEVNULL).strip()
+        config = check_output(['git', 'config', '--get', name],
+                              stderr=DEVNULL).decode().strip()
         if config.startswith('!'):
-            process = Popen(
-                config[1:], shell=True, stdout=PIPE, stderr=PIPE)
+            process = Popen(config[1:], shell=True, stdout=PIPE, stderr=PIPE)
             stdout, stderr = process.communicate()
             if process.returncode != 0:
                 raise GitIssueError('%s = %s\n%s' %
                                     (name, config, stderr.strip()))
-            config = stdout.strip()
+            config = stdout.decode().strip()
         return config
 
 
